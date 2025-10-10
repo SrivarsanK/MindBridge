@@ -5,252 +5,375 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org)
 [![Clerk](https://img.shields.io/badge/Clerk-Auth-purple?style=for-the-badge)](https://clerk.com)
 
-> **A premium, production-ready mental wellness platform for students with enterprise-grade privacy and beautiful UI/UX**
+> **A production-ready mental wellness platform for students with enterprise-grade security, privacy-first architecture, and premium UI/UX design.**
 
-## ✨ Features
+## 📖 Table of Contents
 
-### 🎨 Premium UI/UX ($100k Design)
-- **Stunning Dashboard** with gradient backgrounds and smooth animations
-- **AI Companion Chat** with typing indicators and message bubbles
-- **Interactive Mood Selector** with emoji icons and visual feedback
-- **Beautiful Charts** for dream analysis and emotional patterns
-- **Quick Relief Exercises** with hover effects and timers
-- **Peer Matching Interface** with E2E encryption badges
-- **Emergency Support Bar** always visible at bottom
+- [Overview](#-overview)
+- [Quick Start](#-quick-start)
+- [Features](#-features)
+- [Tech Stack](#-tech-stack)
+- [Project Structure](#-project-structure)
+- [Setup Guide](#-setup-guide)
+- [Deployment](#-deployment)
+- [Documentation](#-documentation)
+- [Contributing](#-contributing)
 
-### 🔐 Enterprise Security
-- **Clerk Authentication** with social logins and guest access
-- **Convex Backend** with real-time data synchronization
-- **GDPR/CCPA Compliant** data management
-- **End-to-End Encryption** for peer messaging
-- **Audit Logging** for all sensitive operations
-- **Crisis Detection** with multi-level response system
+---
 
-### 🏗️ Technical Stack
-- **Frontend**: Next.js 15 + React 19 + TypeScript
-- **Styling**: Tailwind CSS 4 + 21dev components (shadcn/ui)
-- **Auth**: Clerk (multi-provider authentication)
-- **Backend**: Convex (real-time database)
-- **AI**: OpenAI GPT-4 integration (optional)
-- **Icons**: Lucide React (500+ icons)
-- **Analytics**: Vercel Analytics
+## 🎯 Overview
+
+**MindBridge** is a comprehensive mental health support platform designed specifically for students. It combines AI-powered companionship, mood tracking, dream analysis, and peer support in a secure, privacy-first environment.
+
+### Why MindBridge?
+
+- ✅ **Privacy-First**: On-device processing, encrypted data, GDPR/CCPA compliant
+- ✅ **Crisis-Aware**: Multi-level crisis detection with automatic escalation
+- ✅ **AI-Powered**: GPT-4 chatbot with contextual emotional support
+- ✅ **Peer Support**: Anonymous peer matching with E2E encryption
+- ✅ **Beautiful UI**: Premium design with smooth animations and accessibility
+- ✅ **Multi-Language**: Support for 6 Indian languages
+
+---
 
 ## 🚀 Quick Start
 
-### Development (Guest Mode)
+### Prerequisites
+
+- **Node.js** 18+ and **pnpm** installed
+- **Clerk account** (for authentication) - [Sign up here](https://clerk.com)
+- **Convex account** (optional, for backend) - [Sign up here](https://convex.dev)
+
+### Installation
+
 ```bash
+# Clone the repository
+git clone https://github.com/SrivarsanK/MindBridge.git
+cd MindBridge
+
 # Install dependencies
 pnpm install
+```
 
-# Start development server
+### Running Locally
+
+**Option 1: Quick Preview (No Setup Required)**
+
+```bash
 pnpm dev
 ```
-Visit http://localhost:3000 and click "Continue as Guest"
 
-### Full Setup (With Authentication)
+Visit <http://localhost:3000> - The app will work with guest mode and mock data.
 
-1. **Get Clerk API Keys**
-   - Sign up at [clerk.com](https://clerk.com)
-   - Create a new application
-   - Copy your Publishable and Secret keys
+**Option 2: Full Setup (With Authentication)**
 
-2. **Update Environment Variables**
-   ```env
-   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_your_key_here
-   CLERK_SECRET_KEY=sk_test_your_secret_here
-   ```
+1. Create `.env.local` file in the root directory
+2. Add your Clerk API keys (see [Setup Guide](#setup-guide))
+3. Run the development server:
 
-3. **Start Development**
-   ```bash
-   pnpm dev
-   ```
+```bash
+pnpm dev
+```
+
+---
+
+## ✨ Features
+
+### 🎯 Core Features
+
+| Feature | Description | Status |
+|---------|-------------|--------|
+| **AI Companion** | 24/7 GPT-4 powered emotional support chatbot | ✅ Ready |
+| **Crisis Detection** | Multi-level crisis detection with auto-escalation | ✅ Ready |
+| **Dream Analysis** | Emotional pattern recognition from dream journals | ✅ Ready |
+| **Peer Matching** | Anonymous peer-to-peer support connections | ✅ Ready |
+| **Mood Tracking** | Daily mood check-ins with visualization | ✅ Ready |
+| **Quick Relief** | Breathing exercises and grounding techniques | ✅ Ready |
+
+### 🔒 Security & Privacy
+
+- **On-Device Processing**: Sensitive data encrypted before storage
+- **End-to-End Encryption**: Peer messages fully encrypted
+- **GDPR/CCPA Compliant**: Data export, deletion, and retention controls
+- **Role-Based Access**: Student, moderator, and crisis responder roles
+- **Audit Logging**: Comprehensive activity tracking
+- **Anonymous Mode**: Optional pseudonym generation
+
+### 🌐 Localization
+
+Supports 6 languages:
+- English (India) - `en-IN`
+- Hindi - `hi`
+- Bengali - `bn`
+- Tamil - `ta`
+- Telugu - `te`
+- Marathi - `mr`
+
+---
+
+## 🏗️ Tech Stack
+
+### Frontend
+
+- **Framework**: [Next.js 15](https://nextjs.org) (App Router)
+- **Language**: [TypeScript 5](https://www.typescriptlang.org)
+- **UI Library**: [Radix UI](https://www.radix-ui.com) + [shadcn/ui](https://ui.shadcn.com)
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com)
+- **Icons**: [Lucide React](https://lucide.dev)
+- **Charts**: [Recharts](https://recharts.org)
+
+### Backend
+
+- **Authentication**: [Clerk](https://clerk.com)
+- **Database**: [Convex](https://convex.dev) (Real-time serverless)
+- **AI**: [OpenAI GPT-4](https://openai.com)
+
+### Dev Tools
+
+- **Package Manager**: pnpm
+- **Linting**: ESLint
+- **Deployment**: Vercel
+
+---
 
 ## 📂 Project Structure
 
-```
+```plaintext
 MindBridge/
-├── app/                          # Next.js 15 App Router
-│   ├── (marketing)/page.tsx      # Landing page
-│   ├── dashboard/page.tsx        # Premium dashboard
-│   ├── login/page.tsx           # Clerk authentication
-│   ├── onboarding/              # 4-step onboarding wizard
-│   └── layout.tsx               # Root layout with providers
-├── components/
-│   ├── dashboard/               # Premium dashboard cards
-│   │   ├── ai-companion-card.tsx      # Chat interface
-│   │   ├── daily-checkin-card.tsx     # Mood selector
-│   │   ├── dream-analysis-card.tsx    # Dream patterns
-│   │   ├── micro-interventions-card.tsx # Quick relief
-│   │   └── peer-matching-card.tsx     # Peer support
-│   ├── ui/                      # 21dev components (Button, Card, etc.)
-│   ├── emergency-support-bar.tsx
-│   ├── mood-provider.tsx        # Mood state management
-│   └── locale-provider.tsx      # i18n support (6 languages)
-├── convex/                      # Backend (15 database tables)
-│   ├── schema.ts               # Database schema
-│   ├── chatbot.ts              # AI chatbot logic
-│   ├── peerMatching.ts         # Peer matching algorithm
-│   ├── dreamAnalysis.ts        # Dream pattern analysis
-│   ├── crisis.ts               # Crisis detection system
-│   └── privacy.ts              # GDPR/CCPA compliance
-├── lib/
-│   ├── utils.ts                # Utility functions (cn helper)
-│   └── emergency.ts            # Indian crisis hotline numbers
-├── middleware.ts               # Clerk authentication middleware
-├── WARP.md                     # Development guide for AI agents
-├── BACKEND_INTEGRATION_GUIDE.md # Full backend setup guide
-└── QUICK_START.md              # Quick reference guide
+├── app/                           # Next.js App Router
+│   ├── (marketing)/               # Public pages
+│   │   └── page.tsx              # Landing page
+│   ├── dashboard/                 # Protected dashboard
+│   │   └── page.tsx              # Main dashboard
+│   ├── login/                     # Authentication
+│   │   └── page.tsx              # Login page
+│   ├── onboarding/                # 4-step onboarding
+│   │   ├── step-1/               # Privacy consent
+│   │   ├── step-2/               # Language selection
+│   │   ├── step-3/               # Initial mood
+│   │   └── step-4/               # Feature tour
+│   ├── layout.tsx                 # Root layout
+│   └── globals.css                # Global styles
+│
+├── components/                    # React components
+│   ├── dashboard/                 # Dashboard feature cards
+│   │   ├── ai-companion-card.tsx
+│   │   ├── daily-checkin-card.tsx
+│   │   ├── dream-analysis-card.tsx
+│   │   ├── micro-interventions-card.tsx
+│   │   └── peer-matching-card.tsx
+│   ├── ui/                        # Reusable UI components
+│   └── emergency-support-bar.tsx  # Crisis hotline bar
+│
+├── convex/                        # Convex backend
+│   ├── schema.ts                  # Database schema (15 tables)
+│   ├── chatbot.ts                 # AI chatbot logic
+│   ├── crisis.ts                  # Crisis detection
+│   ├── peerMatching.ts            # Peer algorithm
+│   ├── dreamAnalysis.ts           # Dream patterns
+│   └── privacy.ts                 # GDPR compliance
+│
+├── lib/                           # Utility functions
+│   ├── utils.ts                   # Helper functions
+│   └── emergency.ts               # Crisis hotlines
+│
+├── middleware.ts                  # Clerk auth middleware
+├── .env.local                     # Environment variables
+└── README.md                      # This file
 ```
 
-## 🎨 Design System
+---
 
-### Colors
-- **Primary**: Sage/teal (`hsl(172 32% 35%)`) - Calm, growth, safety
-- **Accent**: Warm orange (`hsl(35 90% 48%)`) - Notices, highlights
-- **Destructive**: Crisis red (`hsl(355 80% 45%)`) - Emergency actions
-- **Background**: Soft neutral (`hsl(180 15% 98%)`)
+## 📚 Setup Guide
 
-### Components (21dev)
-Built on Radix UI primitives with custom styling:
-- Button (6 variants, 4 sizes)
-- Card, Dialog, Dropdown Menu
-- Input, Textarea, Checkbox, Switch
-- Charts (Recharts integration)
-- Toast notifications (Sonner)
+### Step 1: Clone and Install
 
-### Mood-Adaptive Theming
-UI subtly adapts based on user mood:
-- `neutral` - Standard sage/teal
-- `anxious` - Slightly warmer tones
-- `low` - Softer, muted colors
-- `lonely` - Deeper, embracing tones
-- `crisis` - Emergency resources highlighted
-
-## 📱 Pages & Features
-
-### Landing Page (`/`)
-- Hero section with trust indicators
-- Privacy-first messaging
-- Indian language support (en-IN, hi, bn, ta, te, mr)
-
-### Dashboard (`/dashboard`)
-- Premium hero header with stats (Privacy, Streak, Insights)
-- AI Companion chat with crisis detection
-- Dream Analysis with emotional pattern charts
-- Daily Check-in mood selector
-- Micro-interventions (breathing, grounding exercises)
-- Peer Matching with anonymous connections
-
-### Onboarding (`/onboarding/step-1` to `/step-4`)
-- **Step 1**: Privacy consent & federated learning opt-in
-- **Step 2**: Language preference
-- **Step 3**: Initial mood baseline
-- **Step 4**: Feature tour & completion
-
-### Authentication (`/login`)
-- Clerk SignIn component
-- Guest access option
-- Terms & Privacy links
-
-## 🔧 Development
-
-### Available Scripts
 ```bash
-pnpm dev        # Start development server
-pnpm build      # Build for production
-pnpm start      # Start production server
-pnpm lint       # Run ESLint
+git clone https://github.com/SrivarsanK/MindBridge.git
+cd MindBridge
+pnpm install
 ```
 
-### Environment Variables
+### Step 2: Configure Clerk Authentication
+
+1. Go to [clerk.com](https://clerk.com) and sign up
+2. Create a new application
+3. Go to **API Keys** in the dashboard
+4. Copy your keys and add them to `.env.local`:
+
 ```env
 # Clerk Authentication
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
-CLERK_SECRET_KEY=sk_test_...
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_your_publishable_key_here
+CLERK_SECRET_KEY=sk_test_your_secret_key_here
 
 # Clerk URLs
 NEXT_PUBLIC_CLERK_SIGN_IN_URL=/login
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/login
 NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/dashboard
-
-# Convex Backend (Optional)
-NEXT_PUBLIC_CONVEX_URL=https://your-deployment.convex.cloud
-
-# OpenAI (Optional)
-CONVEX_OPENAI_API_KEY=sk-...
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/onboarding/step-1
 ```
 
-## 🗄️ Backend Features (Convex)
+### Step 3: Configure Convex Backend (Optional)
 
-### Available with Backend Setup
-- **AI Chatbot**: OpenAI GPT-4 with streaming responses
-- **Crisis Detection**: Keyword + sentiment analysis
-- **Dream Analysis**: Emotional pattern recognition
-- **Peer Matching**: AI-powered compatibility algorithm
-- **Privacy Controls**: GDPR/CCPA data export & deletion
-- **Audit Logging**: Comprehensive activity tracking
-- **Rate Limiting**: Abuse prevention (20 req/min)
+1. Go to [convex.dev](https://convex.dev) and sign up
+2. Install Convex CLI:
 
-### Database Schema
-15 tables including:
-- `userProfiles` - User data with privacy settings
-- `conversations` - AI chatbot conversations
-- `dreamAnalysis` - Dream pattern records
-- `peerMatches` - Anonymous peer connections
-- `crisisEvents` - Crisis detection & response
-- `auditLogs` - Compliance & security logs
+```bash
+npx convex dev
+```
 
-## 🆘 Emergency Resources
+3. Follow the prompts to create a deployment
+4. Add the generated URLs to `.env.local`:
 
-Built-in Indian crisis hotlines:
-- **Tele-MANAS**: 14416 / 1800-891-4416
-- **KIRAN**: 1800-599-0019
+```env
+# Convex Backend
+CONVEX_DEPLOYMENT=dev:your-deployment-name
+NEXT_PUBLIC_CONVEX_URL=https://your-deployment.convex.cloud
+```
 
-Always visible in emergency support bar at bottom of app.
+### Step 4: Add OpenAI API Key (Optional)
 
-## 📚 Documentation
+For AI chatbot functionality:
 
-- **[QUICK_START.md](./QUICK_START.md)** - Quick reference guide
-- **[BACKEND_INTEGRATION_GUIDE.md](./BACKEND_INTEGRATION_GUIDE.md)** - Full backend setup
-- **[WARP.md](./WARP.md)** - Development guide for AI agents
-- **[Clerk Docs](https://clerk.com/docs)** - Authentication
-- **[Convex Docs](https://docs.convex.dev)** - Backend database
+```env
+# OpenAI API
+CONVEX_OPENAI_API_KEY=sk-your-openai-api-key-here
+```
+
+### Step 5: Run the Application
+
+```bash
+# Development mode
+pnpm dev
+
+# Production build
+pnpm build
+pnpm start
+```
+
+---
 
 ## 🚀 Deployment
 
-### Vercel (Recommended)
-1. Push code to GitHub
-2. Import to Vercel
-3. Add environment variables
-4. Deploy!
+### Deploy to Vercel (Recommended)
+
+1. **Push to GitHub**
+
+   ```bash
+   git add .
+   git commit -m "Ready for deployment"
+   git push origin main
+   ```
+
+2. **Import to Vercel**
+   - Go to [vercel.com](https://vercel.com)
+   - Click "New Project"
+   - Import your GitHub repository
+   - Vercel will auto-detect Next.js
+
+3. **Add Environment Variables**
+   - Go to Project Settings → Environment Variables
+   - Add all variables from `.env.local`
+   - Deploy!
+
+### Deploy Convex Backend
+
+```bash
+npx convex deploy
+```
+
+Update your Vercel environment variables with the production Convex URL.
 
 ### Production Checklist
-- [ ] Set Clerk production keys
-- [ ] Deploy Convex backend (`npx convex deploy`)
-- [ ] Configure production URLs in Clerk dashboard
+
+- [ ] Update Clerk keys to production keys
+- [ ] Deploy Convex backend to production
+- [ ] Configure Clerk production URLs
+- [ ] Test all authentication flows
+- [ ] Verify crisis detection works
+- [ ] Test GDPR data export
 - [ ] Enable rate limiting
-- [ ] Test crisis detection
-- [ ] Verify GDPR compliance
+- [ ] Set up monitoring and analytics
+
+---
+
+## 📖 Documentation
+
+| Document | Description |
+|----------|-------------|
+| [QUICK_START.md](./QUICK_START.md) | Quick reference guide |
+| [BACKEND_INTEGRATION_GUIDE.md](./BACKEND_INTEGRATION_GUIDE.md) | Full backend setup instructions |
+| [WARP.md](./WARP.md) | Development guide for AI agents |
+| [Clerk Docs](https://clerk.com/docs) | Authentication documentation |
+| [Convex Docs](https://docs.convex.dev) | Backend database documentation |
+
+---
+
+## 🆘 Emergency Resources
+
+MindBridge includes built-in crisis support with Indian mental health hotlines:
+
+- **Tele-MANAS**: 14416 / 1800-891-4416
+- **KIRAN**: 1800-599-0019
+
+These are always visible in the emergency support bar at the bottom of the app.
+
+---
 
 ## 🤝 Contributing
 
-Contributions welcome! This is a mental health platform, so please:
-- Follow accessibility best practices
-- Maintain privacy-first principles
-- Test thoroughly before submitting PRs
-- Keep crisis detection sensitive and accurate
+We welcome contributions! This is a mental health platform, so please:
+
+1. **Follow best practices**: Accessibility, privacy, and security
+2. **Test thoroughly**: Especially crisis detection features
+3. **Maintain sensitivity**: Handle mental health topics with care
+4. **Document changes**: Update README and comments
+
+### Development Workflow
+
+```bash
+# Fork the repository
+# Create a feature branch
+git checkout -b feature/your-feature-name
+
+# Make changes and test
+pnpm dev
+
+# Build and verify
+pnpm build
+
+# Commit and push
+git commit -m "Add your feature"
+git push origin feature/your-feature-name
+
+# Create a pull request
+```
+
+---
 
 ## 📄 License
 
-MIT License - Built for student mental health ❤️
+MIT License - See [LICENSE](./LICENSE) for details
+
+---
 
 ## 🙏 Acknowledgments
 
-- **OpenAI** for GPT-4 API
-- **Convex** for real-time database
-- **Clerk** for authentication
-- **Radix UI** for accessible components
-- **v0.app** for initial UI generation
-- All contributors and supporters
+- **OpenAI** - GPT-4 API for AI companionship
+- **Convex** - Real-time serverless database
+- **Clerk** - Authentication infrastructure
+- **Radix UI** - Accessible component primitives
+- **Vercel** - Deployment and hosting
+- **v0.app** - Initial UI generation
+- All contributors and mental health advocates
+
+---
+
+## 💬 Support
+
+- **Issues**: [GitHub Issues](https://github.com/SrivarsanK/MindBridge/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/SrivarsanK/MindBridge/discussions)
+- **Email**: support@mindbridge.app
 
 ---
 

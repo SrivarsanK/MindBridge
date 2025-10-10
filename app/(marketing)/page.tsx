@@ -3,6 +3,7 @@ import { useLocale } from "@/components/locale-provider"
 import { Button } from "@/components/ui/button"
 import { CheckCircle2, Shield, Brain, Users, Moon, Heart, Sparkles, ArrowRight, Lock, Zap } from "lucide-react"
 import Link from "next/link"
+import { SignInButton, SignUpButton, SignedIn, SignedOut } from "@clerk/nextjs"
 
 export default function Page() {
   const { t } = useLocale()
@@ -78,13 +79,27 @@ export default function Page() {
             </div>
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pt-6">
-              <Button asChild size="lg" className="group relative h-14 px-8 text-base font-semibold bg-gradient-to-r from-primary via-primary to-primary/90 hover:from-primary/95 hover:via-primary/90 hover:to-primary/80 shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/40 transition-all duration-300 hover:scale-105 overflow-hidden">
-                <Link href="/dashboard" className="flex items-center gap-2">
-                  <span className="relative z-10">{t("cta_start")}</span>
-                  <ArrowRight className="h-5 w-5 relative z-10 transition-transform group-hover:translate-x-2" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-                </Link>
-              </Button>
+              {/* Show Dashboard link when signed in, Sign Up when signed out */}
+              <SignedIn>
+                <Button asChild size="lg" className="group relative h-14 px-8 text-base font-semibold bg-gradient-to-r from-primary via-primary to-primary/90 hover:from-primary/95 hover:via-primary/90 hover:to-primary/80 shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/40 transition-all duration-300 hover:scale-105 overflow-hidden">
+                  <Link href="/dashboard" className="flex items-center gap-2">
+                    <span className="relative z-10">Go to Dashboard</span>
+                    <ArrowRight className="h-5 w-5 relative z-10 transition-transform group-hover:translate-x-2" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                  </Link>
+                </Button>
+              </SignedIn>
+              
+              <SignedOut>
+                <SignUpButton mode="modal" forceRedirectUrl="/onboarding/step-1">
+                  <Button size="lg" className="group relative h-14 px-8 text-base font-semibold bg-gradient-to-r from-primary via-primary to-primary/90 hover:from-primary/95 hover:via-primary/90 hover:to-primary/80 shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/40 transition-all duration-300 hover:scale-105 overflow-hidden">
+                    <span className="relative z-10">{t("cta_start")}</span>
+                    <ArrowRight className="h-5 w-5 relative z-10 transition-transform group-hover:translate-x-2" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                  </Button>
+                </SignUpButton>
+              </SignedOut>
+              
               <Button variant="outline" asChild size="lg" className="h-14 px-8 text-base font-semibold border-2 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 hover:scale-105 shadow-lg">
                 <Link href="#features" className="flex items-center gap-2">
                   Learn More
@@ -233,12 +248,25 @@ export default function Page() {
               Join thousands of students who trust MindBridge for their mental wellness
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <Button asChild size="lg" variant="secondary" className="h-12 px-8 bg-white text-primary hover:bg-white/90 shadow-lg">
-                <Link href="/dashboard" className="flex items-center gap-2">
-                  Get Started Free
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
+              {/* Show Dashboard when signed in, Sign Up when signed out */}
+              <SignedIn>
+                <Button asChild size="lg" variant="secondary" className="h-12 px-8 bg-white text-primary hover:bg-white/90 shadow-lg">
+                  <Link href="/dashboard" className="flex items-center gap-2">
+                    Go to Dashboard
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </SignedIn>
+              
+              <SignedOut>
+                <SignUpButton mode="modal" forceRedirectUrl="/onboarding/step-1">
+                  <Button size="lg" variant="secondary" className="h-12 px-8 bg-white text-primary hover:bg-white/90 shadow-lg">
+                    Get Started Free
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </SignUpButton>
+              </SignedOut>
+              
               <Button asChild size="lg" variant="outline" className="h-12 px-8 border-white text-white hover:bg-white/10">
                 <Link href="#features">
                   View Demo
