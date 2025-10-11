@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Bot, User, Send, Sparkles, AlertTriangle } from "lucide-react";
+import { MarkdownMessage } from "@/components/markdown-message";
 
 type Message = {
   role: "user" | "assistant";
@@ -132,7 +133,10 @@ export function AICompanionCard() {
                     : "bg-muted"
                 }`}
               >
-                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                <MarkdownMessage 
+                  content={message.content} 
+                  isUser={message.role === "user"}
+                />
               </div>
               {message.role === "user" && (
                 <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">

@@ -2,8 +2,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useMood } from "@/components/mood-provider"
 import { Button } from "@/components/ui/button"
-import { Smile, Frown, Cloud, Users, Heart } from "lucide-react"
+import { Smile, Frown, Cloud, Users, Heart, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useMutation, useQuery } from "convex/react"
+import { api } from "@/convex/_generated/api"
+import { useState, useEffect } from "react"
 
 const moodConfig = {
   neutral: { icon: Smile, color: "bg-primary", label: "Calm", emoji: "😌" },
@@ -15,6 +18,32 @@ const moodConfig = {
 export default function DailyCheckinCard() {
   const { mood, setMood } = useMood()
   const moods = ["neutral", "anxious", "low", "lonely"] as const
+  const recordCheckin = useMutation(api.analytics.recordDailyCheckin)
+  const streakData = useQuery(api.analytics.getStreak)
+  const [saved, setSaved] = useState(false)
+
+  // Initialize saved state based on whether user checked in today
+  useEffect(() => {
+    if (streakData?.hasCheckedInToday) {
+      setSaved(true)
+    }
+  }, [streakData?.hasCheckedInToday])
+
+  const handleMoodSelect = async (selectedMood: typeof moods[number]) => {
+    setMood(selectedMood)
+    setSaved(false)
+  }
+
+  const handleSaveCheckin = async () => {
+    const validMoods = ["neutral", "anxious", "low", "lonely"] as const
+    if (!mood || !validMoods.includes(mood as any)) return
+    try {
+      await recordCheckin({ mood: mood as typeof validMoods[number] })
+      setSaved(true)
+    } catch (error) {
+      console.error("Failed to save check-in:", error)
+    }
+  }
   
   return (
     <Card className="overflow-hidden border-primary/10 shadow-md hover:shadow-lg transition-all duration-300">
@@ -36,7 +65,7 @@ export default function DailyCheckinCard() {
               return (
                 <button
                   key={m}
-                  onClick={() => setMood(m as any)}
+                  onClick={() => handleMoodSelect(m)}
                   className={cn(
                     "relative group p-4 rounded-2xl border-2 transition-all duration-300",
                     "hover:scale-105 hover:shadow-md active:scale-95",
@@ -70,6 +99,25 @@ export default function DailyCheckinCard() {
               )
             })}
           </div>
+          
+          {mood && !saved && (
+            <Button 
+              onClick={handleSaveCheckin}
+              className="w-full mt-2"
+              size="sm"
+            >
+              <Check className="h-4 w-4 mr-2" />
+              Save Check-in
+            </Button>
+          )}
+
+          {saved && (
+            <div className="mt-2 p-3 rounded-xl bg-green-500/10 border border-green-500/20">
+              <p className="text-xs text-green-700 dark:text-green-400 text-center font-medium">
+                ✓ Check-in saved! Keep your streak going!
+              </p>
+            </div>
+          )}
           
           <div className="mt-2 p-3 rounded-xl bg-primary/5 border border-primary/10">
             <p className="text-xs text-muted-foreground text-center">

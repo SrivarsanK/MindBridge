@@ -1,13 +1,41 @@
 "use client"
 import { useState } from "react"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import { useMutation } from "convex/react"
+import { api } from "@/convex/_generated/api"
 
 export default function Step4() {
   const [dreams, setDreams] = useState(true)
   const [peer, setPeer] = useState(false) // opt-in OFF by default
   const [anxiety, setAnxiety] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  
+  const router = useRouter()
+  const createOrUpdateProfile = useMutation(api.users.createOrUpdateProfile)
+
+  const handleFinish = async () => {
+    setIsSaving(true)
+    try {
+      // Create user profile with privacy settings
+      await createOrUpdateProfile({
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        privacySettings: {
+          allowPeerMatching: peer,
+          allowDreamAnalysis: dreams,
+          shareEmotionalPatterns: anxiety,
+          dataRetentionDays: 90,
+        }
+      })
+      
+      router.push("/dashboard")
+    } catch (error) {
+      console.error("Error creating profile:", error)
+      alert("Failed to complete onboarding. Please try again.")
+      setIsSaving(false)
+    }
+  }
 
   return (
     <div className="mx-auto max-w-lg px-4 py-8">
@@ -28,11 +56,11 @@ export default function Step4() {
         </label>
       </div>
       <div className="mt-6 flex items-center justify-between">
-        <Button variant="ghost" asChild>
-          <Link href="/onboarding/step-3">Back</Link>
+        <Button variant="ghost" onClick={() => router.push("/onboarding/step-3")}>
+          Back
         </Button>
-        <Button asChild>
-          <Link href="/dashboard">Finish</Link>
+        <Button onClick={handleFinish} disabled={isSaving}>
+          {isSaving ? "Saving..." : "Finish"}
         </Button>
       </div>
     </div>

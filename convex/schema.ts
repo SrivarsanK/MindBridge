@@ -282,6 +282,38 @@ const applicationTables = {
     .index("by_status", ["status"])
     .index("by_priority", ["priority"])
     .index("by_created_at", ["createdAt"]),
+
+  // Daily Check-ins for Streak Tracking
+  dailyCheckins: defineTable({
+    userId: v.id("users"),
+    mood: v.union(v.literal("neutral"), v.literal("anxious"), v.literal("low"), v.literal("lonely")),
+    checkinDate: v.string(), // YYYY-MM-DD format for easy querying
+    timestamp: v.number(),
+    notes: v.optional(v.string()),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_user_and_date", ["userId", "checkinDate"])
+    .index("by_timestamp", ["timestamp"]),
+
+  // User Insights and Analytics
+  userInsights: defineTable({
+    userId: v.id("users"),
+    insightType: v.union(
+      v.literal("mood_pattern"),
+      v.literal("activity_streak"),
+      v.literal("progress_milestone"),
+      v.literal("wellness_tip")
+    ),
+    title: v.string(),
+    description: v.string(),
+    metadata: v.string(), // JSON string with additional data
+    generatedAt: v.number(),
+    expiresAt: v.optional(v.number()),
+    dismissed: v.boolean(),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_user_and_type", ["userId", "insightType"])
+    .index("by_generated_at", ["generatedAt"]),
 };
 
 export default defineSchema({

@@ -9,6 +9,7 @@ import { LocaleProvider } from "@/components/locale-provider"
 import LocaleSwitcher from "@/components/locale-switcher"
 import { Suspense } from "react"
 import { ClerkProvider, SignedIn, SignedOut, UserButton, SignInButton, SignUpButton } from "@clerk/nextjs"
+import { ConvexClientProvider } from "@/components/convex-client-provider"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <ClerkProvider>
       <html lang="en" className={`${inter.variable} antialiased`}>
         <body className="font-sans">
+          <ConvexClientProvider>
             {/* Accessibility skip link */}
             <a
               href="#main"
@@ -119,8 +121,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               </LocaleProvider>
             </Suspense>
             <Analytics />
-          </body>
-        </html>
+          </ConvexClientProvider>
+        </body>
+      </html>
     </ClerkProvider>
   )
 }

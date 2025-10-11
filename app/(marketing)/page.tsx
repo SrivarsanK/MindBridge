@@ -58,22 +58,22 @@ export default function Page() {
 
       {/* Hero Section */}
       <section className="mx-auto max-w-7xl px-4 py-20 md:py-32">
-        <div className="grid gap-12 lg:grid-cols-2 lg:gap-20 items-center">
+        <div className="grid gap-12 lg:grid-cols-2 lg:gap-20 items-start lg:items-center">
           {/* Left Column - Content */}
           <div className="space-y-8 animate-in fade-in slide-in-from-left-8 duration-1000">
             {/* Badge with Animation */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-gradient-to-r from-primary/10 to-accent/10 text-primary text-sm font-medium shadow-lg shadow-primary/5 hover:shadow-primary/10 transition-all hover:scale-105 cursor-default">
-              <Sparkles className="h-4 w-4 animate-pulse" />
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent font-semibold">Privacy-First Mental Wellness</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-gradient-to-r from-primary/10 to-accent/10 text-primary text-sm font-medium shadow-lg shadow-primary/5 hover:shadow-primary/10 transition-all hover:scale-105 cursor-default max-w-full">
+              <Sparkles className="h-4 w-4 animate-pulse shrink-0" />
+              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent font-semibold truncate">Privacy-First Mental Wellness</span>
             </div>
 
             <div className="space-y-6">
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.1]">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.1] break-words">
                 <span className="bg-gradient-to-r from-foreground via-foreground/90 to-foreground/70 bg-clip-text text-transparent drop-shadow-sm">
                   {t("hero_title")}
                 </span>
               </h1>
-              <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl leading-relaxed">
+              <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground max-w-2xl leading-relaxed break-words">
                 {t("hero_sub")}
               </p>
             </div>
@@ -109,27 +109,27 @@ export default function Page() {
             </div>
 
             {/* Enhanced Stats with Icons */}
-            <div className="grid grid-cols-3 gap-6 pt-10 border-t border-border/50">
-              <div className="space-y-2 group cursor-default">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 pt-10 border-t border-border/50">
+              <div className="space-y-2 group cursor-default min-w-0">
                 <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                  <div className="h-2 w-2 rounded-full bg-primary animate-pulse shrink-0" />
                   <div className="text-3xl md:text-4xl font-black bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">100%</div>
                 </div>
-                <div className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">Private & Secure</div>
+                <div className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors break-words">Private & Secure</div>
               </div>
-              <div className="space-y-2 group cursor-default">
+              <div className="space-y-2 group cursor-default min-w-0">
                 <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-accent animate-pulse" style={{ animationDelay: '0.5s' }} />
+                  <div className="h-2 w-2 rounded-full bg-accent animate-pulse shrink-0" style={{ animationDelay: '0.5s' }} />
                   <div className="text-3xl md:text-4xl font-black bg-gradient-to-r from-accent to-accent/70 bg-clip-text text-transparent">24/7</div>
                 </div>
-                <div className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">Always Available</div>
+                <div className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors break-words">Always Available</div>
               </div>
-              <div className="space-y-2 group cursor-default">
+              <div className="space-y-2 group cursor-default min-w-0">
                 <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" style={{ animationDelay: '1s' }} />
+                  <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse shrink-0" style={{ animationDelay: '1s' }} />
                   <div className="text-3xl md:text-4xl font-black bg-gradient-to-r from-green-500 to-green-500/70 bg-clip-text text-transparent">E2E</div>
                 </div>
-                <div className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">Encrypted</div>
+                <div className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors break-words">Encrypted</div>
               </div>
             </div>
           </div>

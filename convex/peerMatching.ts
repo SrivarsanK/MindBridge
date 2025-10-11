@@ -205,6 +205,49 @@ export const getActiveMatches = query({
   },
 });
 
+// Get online users statistics
+export const getOnlineUsersStats = query({
+  args: {},
+  handler: async (ctx) => {
+    const now = Date.now();
+    const fiveMinutesAgo = now - 5 * 60 * 1000; // 5 minutes ago
+    
+    // Get all recently active users with peer matching enabled
+    const onlineUsers = await ctx.db
+      .query("userProfiles")
+      .withIndex("by_last_active")
+      .order("desc")
+      .filter((q) => 
+        q.and(
+          q.gte(q.field("lastActive"), fiveMinutesAgo),
+          q.eq(q.field("privacySettings.allowPeerMatching"), true),
+          q.eq(q.field("accountStatus"), "active")
+        )
+      )
+      .collect();
+    
+    // Count users currently searching for matches (pending matches in last 30 seconds)
+    const thirtySecondsAgo = now - 30 * 1000;
+    const recentMatches = await ctx.db
+      .query("peerMatches")
+      .withIndex("by_last_activity")
+      .order("desc")
+      .filter((q) => 
+        q.and(
+          q.gte(q.field("createdAt"), thirtySecondsAgo),
+          q.eq(q.field("status"), "pending")
+        )
+      )
+      .collect();
+    
+    return {
+      onlineCount: onlineUsers.length,
+      searchingCount: recentMatches.length,
+      totalAvailable: onlineUsers.length - recentMatches.length
+    };
+  },
+});
+
 // Send peer message
 export const sendPeerMessage = mutation({
   args: {
