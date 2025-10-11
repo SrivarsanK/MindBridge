@@ -1,5 +1,5 @@
 "use client"
-import AICompanionCard from "@/components/dashboard/ai-companion-card"
+import { AICompanionCard } from "@/components/dashboard/ai-companion-card"
 import DreamAnalysisCard from "@/components/dashboard/dream-analysis-card"
 import PeerMatchingCard from "@/components/dashboard/peer-matching-card"
 import DailyCheckinCard from "@/components/dashboard/daily-checkin-card"
