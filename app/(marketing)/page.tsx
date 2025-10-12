@@ -46,7 +46,7 @@ export default function Page() {
   ]
 
   return (
-    <div className="relative overflow-hidden">
+    <div className="relative overflow-hidden flex flex-col min-h-screen">
       {/* Additional gradient overlays for depth */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 -z-[5]" />
       

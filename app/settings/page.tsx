@@ -100,18 +100,20 @@ export default function SettingsPage() {
 
   if (!currentProfile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">{t("loading_settings")}</p>
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-primary/5">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-muted-foreground">{t("loading_settings")}</p>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-primary/5">
+      <div className="flex-1 mx-auto max-w-4xl w-full px-4 sm:px-6 lg:px-8 py-8 md:py-12">
         {/* Header */}
         <div className="mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
           <div className="flex items-center gap-3 mb-3">
