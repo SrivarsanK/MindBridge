@@ -52,19 +52,24 @@ export const processPeerMatch = internalAction({
     interests: v.array(v.string()),
     timezone: v.string(),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<Id<"peerMatches"> | null> => {
+    console.log(`🔍 Processing peer match for user ${args.userId}`);
+    
     // Get potential matches
-    const candidates = await ctx.runQuery(internal.peerMatching.loadPotentialMatches, {
+    const candidates: any[] = await ctx.runQuery(internal.peerMatching.loadPotentialMatches, {
       userId: args.userId,
       timezone: args.timezone,
     });
 
+    console.log(`📋 Found ${candidates.length} potential candidates`);
+
     if (candidates.length === 0) {
+      console.log(`❌ No candidates found for user ${args.userId}`);
       return null;
     }
 
     // Simple matching algorithm (in production, use ML model)
-    let bestMatch = candidates[0];
+    let bestMatch: any = candidates[0];
     let bestScore = 0;
 
     for (const candidate of candidates) {
@@ -75,17 +80,21 @@ export const processPeerMatch = internalAction({
         candidate
       );
 
+      console.log(`   Candidate ${candidate.userId}: score ${score}`);
+
       if (score > bestScore) {
         bestScore = score;
         bestMatch = candidate;
       }
     }
 
+    console.log(`✅ Best match found with score: ${bestScore}`);
+
     // Generate ice-breaker
     const iceBreaker = await generateIceBreaker(args.mood, args.interests);
 
     // Create match
-    await ctx.runMutation(internal.peerMatching.createMatch, {
+    const matchId: Id<"peerMatches"> = await ctx.runMutation(internal.peerMatching.createMatch, {
       user1Id: args.userId,
       user2Id: bestMatch.userId,
       matchScore: bestScore,
@@ -95,7 +104,9 @@ export const processPeerMatch = internalAction({
       iceBreaker,
     });
 
-    return null;
+    console.log(`🎉 Match created: ${matchId}`);
+
+    return matchId;
   },
 });
 

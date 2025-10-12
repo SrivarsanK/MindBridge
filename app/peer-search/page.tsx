@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { useLocale } from "@/components/locale-provider"
+import { generateKeyPair, exportPublicKey } from "@/lib/crypto"
 import { 
   Search, 
   Users, 
@@ -56,11 +57,68 @@ export default function PeerSearchPage() {
   const [searchQuery, setSearchQuery] = useState<string>("")
   const [isSearching, setIsSearching] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
+  const [encryptionInitialized, setEncryptionInitialized] = useState(false)
 
   const requestPeerMatch = useMutation(api.peerMatching.requestPeerMatch)
+  const uploadPreKeys = useMutation(api.peerMatching.uploadPreKeys)
   const activeMatches = useQuery(api.peerMatching.getActiveMatches)
   const currentUser = useQuery(api.auth.loggedInUser)
   const onlineStats = useQuery(api.peerMatching.getOnlineUsersStats)
+
+  // Initialize encryption keys on first load
+  useEffect(() => {
+    async function initializeEncryption() {
+      if (!currentUser || encryptionInitialized) return
+
+      try {
+        // Check if keys already exist
+        const hasKeys = localStorage.getItem(`encryption_initialized_${currentUser._id}`)
+        if (hasKeys) {
+          setEncryptionInitialized(true)
+          return
+        }
+
+        // Generate identity key pair
+        const identityKeyPair = await generateKeyPair()
+        const identityPublicKey = await exportPublicKey(identityKeyPair.publicKey)
+
+        // Generate signed pre-key
+        const signedPreKeyPair = await generateKeyPair()
+        const signedPreKeyPublic = await exportPublicKey(signedPreKeyPair.publicKey)
+
+        // Generate one-time pre-keys (10 keys)
+        const preKeys: string[] = []
+        for (let i = 0; i < 10; i++) {
+          const preKeyPair = await generateKeyPair()
+          const preKeyPublic = await exportPublicKey(preKeyPair.publicKey)
+          preKeys.push(preKeyPublic)
+        }
+
+        // Create signature (simplified - in production use proper signing)
+        const preKeySignature = await crypto.subtle.digest(
+          "SHA-256",
+          new TextEncoder().encode(signedPreKeyPublic)
+        ).then(buffer => btoa(String.fromCharCode(...new Uint8Array(buffer))))
+
+        // Upload to server
+        await uploadPreKeys({
+          identityPublicKey,
+          signedPreKeyPublic,
+          preKeys,
+          preKeySignature,
+        })
+
+        // Mark as initialized
+        localStorage.setItem(`encryption_initialized_${currentUser._id}`, 'true')
+        setEncryptionInitialized(true)
+        console.log("✅ Encryption keys initialized successfully")
+      } catch (error) {
+        console.error("Failed to initialize encryption:", error)
+      }
+    }
+
+    initializeEncryption()
+  }, [currentUser, encryptionInitialized, uploadPreKeys])
 
   const filteredInterests = INTEREST_OPTIONS.filter(interest =>
     t(interest).toLowerCase().includes(searchQuery.toLowerCase())
@@ -93,24 +151,43 @@ export default function PeerSearchPage() {
         interests: selectedInterests,
       })
       
-      // Poll for match result
-      // In a real app, use a subscription or webhook
-      const checkForMatch = setInterval(async () => {
-        const matches = activeMatches
-        if (matches && matches.length > 0) {
-          const latestMatch = matches[0]
-          clearInterval(checkForMatch)
+      console.log("🔍 Searching for peer match...")
+      
+      // Use activeMatches subscription to detect new matches
+      let timeoutId: NodeJS.Timeout | null = null
+      let attempts = 0
+      const maxAttempts = 30 // 30 attempts * 2 seconds = 60 seconds
+
+      const checkInterval = setInterval(() => {
+        attempts++
+        
+        if (activeMatches && activeMatches.length > 0) {
+          // Found a match!
+          const latestMatch = activeMatches[activeMatches.length - 1]
+          console.log("✅ Match found:", latestMatch._id)
+          
+          clearInterval(checkInterval)
+          if (timeoutId) clearTimeout(timeoutId)
           setIsSearching(false)
+          
           // Redirect to chat
           router.push(`/peer-chat/${latestMatch._id}`)
+        } else if (attempts >= maxAttempts) {
+          // Timeout
+          console.log("⏱️ Match search timeout")
+          clearInterval(checkInterval)
+          setIsSearching(false)
+          alert(t("no_matches_found"))
+        } else {
+          console.log(`⏳ Still searching... (${attempts}/${maxAttempts})`)
         }
       }, 2000)
 
-      // Timeout after 60 seconds
-      setTimeout(() => {
-        clearInterval(checkForMatch)
+      // Safety timeout
+      timeoutId = setTimeout(() => {
+        clearInterval(checkInterval)
         setIsSearching(false)
-        alert(t("no_matches_found"))
+        console.log("🚫 Search timeout reached")
       }, 60000)
     } catch (error) {
       console.error("Error requesting peer match:", error)
