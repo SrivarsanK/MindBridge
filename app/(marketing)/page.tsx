@@ -17,29 +17,29 @@ export default function Page() {
   const features = [
     {
       icon: Brain,
-      title: "AI Companion",
-      description: "Compassionate support powered by advanced AI, available 24/7",
+      title: t("feature_ai_title"),
+      description: t("feature_ai_desc"),
       color: "text-blue-500",
       bgColor: "bg-blue-500/10",
     },
     {
       icon: Moon,
-      title: "Dream Analysis",
-      description: "Understand your emotional patterns through dream interpretation",
+      title: t("feature_dream_title"),
+      description: t("feature_dream_desc"),
       color: "text-purple-500",
       bgColor: "bg-purple-500/10",
     },
     {
       icon: Users,
-      title: "Peer Support",
-      description: "Connect anonymously with others who understand what you're going through",
+      title: t("feature_peer_title"),
+      description: t("feature_peer_desc"),
       color: "text-green-500",
       bgColor: "bg-green-500/10",
     },
     {
       icon: Zap,
-      title: "Quick Relief",
-      description: "Instant access to breathing exercises and grounding techniques",
+      title: t("feature_relief_title"),
+      description: t("feature_relief_desc"),
       color: "text-orange-500",
       bgColor: "bg-orange-500/10",
     },
@@ -62,7 +62,7 @@ export default function Page() {
             {/* Badge with Animation */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-gradient-to-r from-primary/10 to-accent/10 text-primary text-sm font-medium shadow-lg shadow-primary/5 hover:shadow-primary/10 transition-all hover:scale-105 cursor-default max-w-full">
               <Sparkles className="h-4 w-4 animate-pulse shrink-0" />
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent font-semibold truncate">Privacy-First Mental Wellness</span>
+              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent font-semibold truncate">{t("privacy_first")}</span>
             </div>
 
             <div className="space-y-6">
@@ -79,9 +79,9 @@ export default function Page() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pt-6">
               {/* Show Dashboard link when signed in, Sign Up when signed out */}
               <SignedIn>
-                <Button asChild size="lg" className="group relative h-14 px-8 text-base font-semibold bg-gradient-to-r from-primary via-primary to-primary/90 hover:from-primary/95 hover:via-primary/90 hover:to-primary/80 shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/40 transition-all duration-300 hover:scale-105 overflow-hidden">
-                  <Link href="/dashboard" className="flex items-center gap-2">
-                    <span className="relative z-10">Go to Dashboard</span>
+                <Button asChild size="lg" className="group relative h-14 px-8 text-base font-semibold bg-gradient-to-r from-primary via-primary to-primary/90 hover:from-primary/95 hover:via-primary/90 hover:to-primary/80 shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/40 transition-all duration-300 hover:scale-105 overflow-hidden text-white">
+                  <Link href="/dashboard" className="flex items-center gap-2 text-white">
+                    <span className="relative z-10 text-white">{t("go_to_dashboard")}</span>
                     <ArrowRight className="h-5 w-5 relative z-10 transition-transform group-hover:translate-x-2" />
                     <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
                   </Link>
@@ -90,8 +90,8 @@ export default function Page() {
               
               <SignedOut>
                 <SignUpButton mode="modal" forceRedirectUrl="/onboarding/step-1">
-                  <Button size="lg" className="group relative h-14 px-8 text-base font-semibold bg-gradient-to-r from-primary via-primary to-primary/90 hover:from-primary/95 hover:via-primary/90 hover:to-primary/80 shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/40 transition-all duration-300 hover:scale-105 overflow-hidden">
-                    <span className="relative z-10">{t("cta_start")}</span>
+                  <Button size="lg" className="group relative h-14 px-8 text-base font-semibold bg-gradient-to-r from-primary via-primary to-primary/90 hover:from-primary/95 hover:via-primary/90 hover:to-primary/80 shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/40 transition-all duration-300 hover:scale-105 overflow-hidden text-white">
+                    <span className="relative z-10 text-white">{t("cta_start")}</span>
                     <ArrowRight className="h-5 w-5 relative z-10 transition-transform group-hover:translate-x-2" />
                     <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
                   </Button>
@@ -100,7 +100,7 @@ export default function Page() {
               
               <Button variant="outline" asChild size="lg" className="h-14 px-8 text-base font-semibold border-2 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 hover:scale-105 shadow-lg">
                 <Link href="#features" className="flex items-center gap-2">
-                  Learn More
+                  {t("learn_more")}
                   <Sparkles className="h-4 w-4" />
                 </Link>
               </Button>
@@ -113,21 +113,21 @@ export default function Page() {
                   <div className="h-2 w-2 rounded-full bg-primary animate-pulse shrink-0" />
                   <div className="text-3xl md:text-4xl font-black bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">100%</div>
                 </div>
-                <div className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors break-words">Private & Secure</div>
+                <div className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors break-words">{t("private_secure")}</div>
               </div>
               <div className="space-y-2 group cursor-default min-w-0">
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-accent animate-pulse shrink-0" style={{ animationDelay: '0.5s' }} />
                   <div className="text-3xl md:text-4xl font-black bg-gradient-to-r from-accent to-accent/70 bg-clip-text text-transparent">24/7</div>
                 </div>
-                <div className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors break-words">Always Available</div>
+                <div className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors break-words">{t("always_available")}</div>
               </div>
               <div className="space-y-2 group cursor-default min-w-0">
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse shrink-0" style={{ animationDelay: '1s' }} />
                   <div className="text-3xl md:text-4xl font-black bg-gradient-to-r from-green-500 to-green-500/70 bg-clip-text text-transparent">E2E</div>
                 </div>
-                <div className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors break-words">Encrypted</div>
+                <div className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors break-words">{t("encrypted")}</div>
               </div>
             </div>
           </div>
@@ -240,17 +240,17 @@ export default function Page() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1),transparent_70%)]" />
           <div className="relative z-10 max-w-2xl mx-auto space-y-6">
             <h2 className="text-3xl md:text-4xl font-bold text-white">
-              Start Your Wellness Journey Today
+              {t("cta_wellness_title")}
             </h2>
             <p className="text-lg text-primary-foreground/90">
-              Join thousands of students who trust MindBridge for their mental wellness
+              {t("cta_wellness_subtitle")}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               {/* Show Dashboard when signed in, Sign Up when signed out */}
               <SignedIn>
                 <Button asChild size="lg" variant="secondary" className="h-12 px-8 bg-white text-primary hover:bg-white/90 shadow-lg">
                   <Link href="/dashboard" className="flex items-center gap-2">
-                    Go to Dashboard
+                    {t("go_to_dashboard")}
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>

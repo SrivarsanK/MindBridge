@@ -9,8 +9,10 @@ import { Moon, TrendingUp, Brain, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import { useLocale } from "@/components/locale-provider"
 
 export default function DreamAnalysisCard() {
+  const { t } = useLocale()
   const [dreamText, setDreamText] = useState("")
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   
@@ -126,16 +128,16 @@ export default function DreamAnalysisCard() {
       <CardHeader className="bg-gradient-to-br from-primary/5 to-transparent border-b">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-md">
+            <div className="flex items-center justify-center h-11 w-11 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 shadow-lg shadow-indigo-500/20 shrink-0">
               <Moon className="h-5 w-5 text-white" />
             </div>
             <div>
-              <CardTitle className="text-xl">Dream Analysis</CardTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">Pattern recognition & insights</p>
+              <CardTitle className="text-xl">{t("dream_analysis")}</CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">{t("dream_subtitle")}</p>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-500/10">
-            <Brain className="h-3.5 w-3.5 text-indigo-500" />
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-br from-indigo-500/10 to-indigo-500/5 border border-indigo-500/20 shadow-sm">
+            <Brain className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
             <span className="text-xs font-medium text-indigo-500">AI-Powered</span>
           </div>
         </div>
@@ -145,11 +147,11 @@ export default function DreamAnalysisCard() {
           {/* Dream Entry Form */}
           <div className="p-4 rounded-2xl border-2 border-dashed border-primary/20 bg-primary/5 hover:border-primary/40 hover:bg-primary/10 transition-all duration-300">
             <Label htmlFor="dream-text" className="text-sm font-medium mb-2 block">
-              Describe your dream
+              {t("tell_dream")}
             </Label>
             <Textarea
               id="dream-text"
-              placeholder="Tell me about your dream... What did you see? How did you feel?"
+              placeholder={t("dream_placeholder")}
               value={dreamText}
               onChange={(e) => setDreamText(e.target.value)}
               className="min-h-[100px] resize-none mb-3"
@@ -162,12 +164,12 @@ export default function DreamAnalysisCard() {
               {isAnalyzing ? (
                 <>
                   <Brain className="h-4 w-4 mr-2 animate-pulse" />
-                  Analyzing...
+                  {t("analyzing")}
                 </>
               ) : (
                 <>
                   <Sparkles className="h-4 w-4 mr-2" />
-                  Analyze Dream
+                  {t("analyze_dream")}
                 </>
               )}
             </Button>
@@ -180,14 +182,14 @@ export default function DreamAnalysisCard() {
                 <div className="p-4 rounded-2xl bg-gradient-to-br from-chart-1/10 to-chart-1/5 border border-chart-1/20">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="h-2 w-2 rounded-full bg-chart-1" />
-                    <span className="text-xs font-medium text-muted-foreground">Avg Valence</span>
+                    <span className="text-xs font-medium text-muted-foreground">{t("valence_label")}</span>
                   </div>
                   <p className="text-2xl font-bold text-chart-1">{avgValence}</p>
                 </div>
                 <div className="p-4 rounded-2xl bg-gradient-to-br from-chart-2/10 to-chart-2/5 border border-chart-2/20">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="h-2 w-2 rounded-full bg-chart-2" />
-                    <span className="text-xs font-medium text-muted-foreground">Avg Arousal</span>
+                    <span className="text-xs font-medium text-muted-foreground">{t("arousal_label")}</span>
                   </div>
                   <p className="text-2xl font-bold text-chart-2">{avgArousal}</p>
                 </div>
@@ -197,7 +199,7 @@ export default function DreamAnalysisCard() {
               <div className="p-4 rounded-2xl border bg-card/50">
                 <div className="flex items-center gap-2 mb-4">
                   <TrendingUp className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium">Recent Emotional Patterns</span>
+                  <span className="text-sm font-medium">{t("recent_dreams")}</span>
                 </div>
                 <ChartContainer
                   config={{
@@ -248,8 +250,8 @@ export default function DreamAnalysisCard() {
           ) : (
             <div className="p-8 rounded-2xl border bg-card/50 text-center">
               <Moon className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
-              <p className="text-sm text-muted-foreground mb-1">No dreams recorded yet</p>
-              <p className="text-xs text-muted-foreground/70">Start by describing a dream above</p>
+              <p className="text-sm text-muted-foreground mb-1">{t("dream_empty_title")}</p>
+              <p className="text-xs text-muted-foreground/70">{t("dream_empty_desc")}</p>
             </div>
           )}
           

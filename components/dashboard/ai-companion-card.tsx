@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Bot, User, Send, Sparkles, AlertTriangle } from "lucide-react";
 import { MarkdownMessage } from "@/components/markdown-message";
+import { useLocale } from "@/components/locale-provider";
 
 type Message = {
   role: "user" | "assistant";
@@ -13,10 +14,11 @@ type Message = {
 };
 
 export function AICompanionCard() {
+  const { t, locale } = useLocale();
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "Hello! I'm your AI companion. How can I support you today?"
+      content: t("ai_greeting")
     }
   ]);
   const [input, setInput] = useState("");
@@ -36,7 +38,8 @@ export function AICompanionCard() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: [...messages, userMessage]
+          messages: [...messages, userMessage],
+          locale: locale // Pass current locale to API
         })
       });
 
@@ -61,7 +64,7 @@ export function AICompanionCard() {
         ...prev,
         {
           role: "assistant",
-          content: "I'm sorry, I'm having trouble responding right now. Please try again."
+          content: t("ai_error")
         }
       ]);
     } finally {
@@ -80,18 +83,22 @@ export function AICompanionCard() {
     <Card className="h-full flex flex-col">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-purple-500" />
-          AI Companion
+          <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg shadow-purple-500/20 shrink-0">
+            <Sparkles className="h-5 w-5 text-white" />
+          </div>
+          <span>{t("ai_companion")}</span>
         </CardTitle>
         <CardDescription>
-          Chat with your personalized mental wellness companion
+          {t("ai_companion_desc")}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4">
         {showCrisisAlert && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
-            <div className="flex-1">
+          <div className="bg-gradient-to-br from-red-50 to-red-50/50 border-2 border-red-200 rounded-xl p-4 flex items-start gap-3 shadow-md">
+            <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-gradient-to-br from-red-500 to-red-600 shadow-md shrink-0">
+              <AlertTriangle className="h-4 w-4 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
               <h4 className="font-semibold text-red-900 mb-1">Crisis Support Available</h4>
               <p className="text-sm text-red-800 mb-2">
                 If you're in crisis, please reach out to these resources:
@@ -122,8 +129,8 @@ export function AICompanionCard() {
               }`}
             >
               {message.role === "assistant" && (
-                <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-                  <Bot className="h-5 w-5 text-purple-600" />
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 shadow-md shadow-purple-500/20 flex-shrink-0">
+                  <Bot className="h-4 w-4 text-white" />
                 </div>
               )}
               <div
@@ -139,22 +146,22 @@ export function AICompanionCard() {
                 />
               </div>
               {message.role === "user" && (
-                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                  <User className="h-5 w-5 text-blue-600" />
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 shadow-md shadow-blue-500/20 flex-shrink-0">
+                  <User className="h-4 w-4 text-white" />
                 </div>
               )}
             </div>
           ))}
           {isTyping && (
             <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-                <Bot className="h-5 w-5 text-purple-600" />
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 shadow-md shadow-purple-500/20 flex-shrink-0">
+                <Bot className="h-4 w-4 text-white" />
               </div>
               <div className="rounded-lg px-4 py-2 bg-muted">
                 <div className="flex gap-1">
-                  <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: "150ms" }} />
-                  <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+                  <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce [animation-delay:0ms]" />
+                  <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce [animation-delay:150ms]" />
+                  <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce [animation-delay:300ms]" />
                 </div>
               </div>
             </div>
@@ -166,7 +173,7 @@ export function AICompanionCard() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Type your message... (Press Enter to send)"
+            placeholder={t("type_message")}
             className="resize-none"
             rows={2}
             disabled={isTyping}

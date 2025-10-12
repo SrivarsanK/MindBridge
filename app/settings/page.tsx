@@ -3,6 +3,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
+import { useLocale } from "@/components/locale-provider"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
@@ -27,6 +28,7 @@ import {
 
 export default function SettingsPage() {
   const router = useRouter()
+  const { t } = useLocale()
   const currentProfile = useQuery(api.users.getCurrentProfile)
   const updatePrivacy = useMutation(api.users.updatePrivacySettings)
   
@@ -101,7 +103,7 @@ export default function SettingsPage() {
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">Loading your settings...</p>
+          <p className="text-muted-foreground">{t("loading_settings")}</p>
         </div>
       </div>
     )
@@ -117,8 +119,8 @@ export default function SettingsPage() {
               <Shield className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">Settings</h1>
-              <p className="text-sm text-muted-foreground">Manage your privacy and preferences</p>
+              <h1 className="text-3xl font-bold">{t("settings_page_title")}</h1>
+              <p className="text-sm text-muted-foreground">{t("settings_page_subtitle")}</p>
             </div>
           </div>
         </div>
@@ -130,7 +132,7 @@ export default function SettingsPage() {
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="h-5 w-5 text-green-500" />
                 <p className="text-sm font-medium text-green-700 dark:text-green-400">
-                  Settings saved successfully!
+                  {t("save_success")}
                 </p>
               </div>
             </CardContent>
@@ -144,7 +146,7 @@ export default function SettingsPage() {
                 <AlertCircle className="h-5 w-5 text-red-500" />
                 <div>
                   <p className="text-sm font-medium text-red-700 dark:text-red-400">
-                    Failed to save settings
+                    {t("save_error")}
                   </p>
                   {errorMessage && (
                     <p className="text-xs text-red-600 dark:text-red-500 mt-1">{errorMessage}</p>
@@ -160,28 +162,28 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Lock className="h-5 w-5 text-primary" />
-              Account Information
+              {t("account_information")}
             </CardTitle>
-            <CardDescription>Your account details and status</CardDescription>
+            <CardDescription>{t("account_details_status")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 rounded-xl bg-muted/50 border">
-                <p className="text-xs text-muted-foreground mb-1">Account Type</p>
+                <p className="text-xs text-muted-foreground mb-1">{t("account_type")}</p>
                 <p className="text-sm font-medium capitalize">
-                  {currentProfile.isAnonymous ? "Anonymous" : "Registered"}
+                  {currentProfile.isAnonymous ? t("anonymous") : t("registered")}
                 </p>
               </div>
               <div className="p-4 rounded-xl bg-muted/50 border">
-                <p className="text-xs text-muted-foreground mb-1">Account Status</p>
+                <p className="text-xs text-muted-foreground mb-1">{t("account_status")}</p>
                 <p className="text-sm font-medium capitalize">{currentProfile.accountStatus}</p>
               </div>
               <div className="p-4 rounded-xl bg-muted/50 border">
-                <p className="text-xs text-muted-foreground mb-1">Role</p>
+                <p className="text-xs text-muted-foreground mb-1">{t("role")}</p>
                 <p className="text-sm font-medium capitalize">{currentProfile.role}</p>
               </div>
               <div className="p-4 rounded-xl bg-muted/50 border">
-                <p className="text-xs text-muted-foreground mb-1">Timezone</p>
+                <p className="text-xs text-muted-foreground mb-1">{t("timezone")}</p>
                 <p className="text-sm font-medium">{currentProfile.timezone}</p>
               </div>
             </div>
@@ -193,9 +195,9 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary" />
-              Privacy Settings
+              {t("privacy_settings")}
             </CardTitle>
-            <CardDescription>Control what features you want to use and how your data is handled</CardDescription>
+            <CardDescription>{t("privacy_settings_desc")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Peer Matching */}
@@ -206,10 +208,10 @@ export default function SettingsPage() {
                 </div>
                 <div className="flex-1">
                   <Label htmlFor="peer-matching" className="text-sm font-medium cursor-pointer">
-                    Peer Matching
+                    {t("peer_matching_setting")}
                   </Label>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Allow the system to match you with peers for anonymous, encrypted conversations
+                    {t("peer_matching_setting_desc")}
                   </p>
                 </div>
               </div>
@@ -229,10 +231,10 @@ export default function SettingsPage() {
                 </div>
                 <div className="flex-1">
                   <Label htmlFor="dream-analysis" className="text-sm font-medium cursor-pointer">
-                    Dream Analysis
+                    {t("dream_analysis_setting")}
                   </Label>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Enable AI-powered dream analysis to identify emotional patterns and themes
+                    {t("dream_analysis_setting_desc")}
                   </p>
                 </div>
               </div>
@@ -252,10 +254,10 @@ export default function SettingsPage() {
                 </div>
                 <div className="flex-1">
                   <Label htmlFor="emotional-patterns" className="text-sm font-medium cursor-pointer">
-                    Share Emotional Patterns
+                    {t("emotional_patterns_setting")}
                   </Label>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Share anonymized emotional patterns to improve peer matching (no personal data shared)
+                    {t("emotional_patterns_setting_desc")}
                   </p>
                 </div>
               </div>
@@ -274,15 +276,15 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Database className="h-5 w-5 text-primary" />
-              Data Retention
+              {t("data_management")}
             </CardTitle>
-            <CardDescription>Control how long your data is stored</CardDescription>
+            <CardDescription>{t("data_management_desc")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label htmlFor="retention-slider" className="text-sm font-medium">
-                  Retention Period: {dataRetentionDays} days
+                  {t("data_retention")}: {dataRetentionDays} {t("days")}
                 </Label>
                 <Clock className="h-4 w-4 text-muted-foreground" />
               </div>
@@ -298,14 +300,13 @@ export default function SettingsPage() {
                 aria-label="Data retention period in days"
               />
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>7 days</span>
-                <span>90 days</span>
-                <span>180 days</span>
-                <span>1 year</span>
+                <span>7 {t("days")}</span>
+                <span>90 {t("days")}</span>
+                <span>180 {t("days")}</span>
+                <span>1 {t("year")}</span>
               </div>
               <p className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                <strong>Note:</strong> Data older than {dataRetentionDays} days will be automatically deleted. 
-                This includes chat history, dream analyses, and emotional patterns.
+                <strong>{t("note")}:</strong> {t("data_retention_desc")}
               </p>
             </div>
           </CardContent>
@@ -316,9 +317,9 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Download className="h-5 w-5 text-primary" />
-              Data Management
+              {t("data_actions")}
             </CardTitle>
-            <CardDescription>Export or delete your data</CardDescription>
+            <CardDescription>{t("data_actions_desc")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-3">
@@ -329,8 +330,8 @@ export default function SettingsPage() {
               >
                 <Download className="h-5 w-5 mr-3 shrink-0" />
                 <div className="text-left flex-1">
-                  <p className="text-sm font-medium">Export Your Data</p>
-                  <p className="text-xs text-muted-foreground">Download all your data in JSON format</p>
+                  <p className="text-sm font-medium">{t("export_data")}</p>
+                  <p className="text-xs text-muted-foreground">{t("export_data_desc")}</p>
                 </div>
               </Button>
               
@@ -341,8 +342,8 @@ export default function SettingsPage() {
               >
                 <Trash2 className="h-5 w-5 mr-3 text-red-500 shrink-0" />
                 <div className="text-left flex-1">
-                  <p className="text-sm font-medium text-red-600 dark:text-red-400">Delete Account</p>
-                  <p className="text-xs text-muted-foreground">Permanently delete your account and all data</p>
+                  <p className="text-sm font-medium text-red-600 dark:text-red-400">{t("delete_data")}</p>
+                  <p className="text-xs text-muted-foreground">{t("delete_data_desc")}</p>
                 </div>
               </Button>
             </div>
@@ -359,12 +360,12 @@ export default function SettingsPage() {
             {isSaving ? (
               <>
                 <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                Saving...
+                {t("saving")}
               </>
             ) : (
               <>
                 <Save className="h-5 w-5 mr-2" />
-                Save Changes
+                {t("save_changes")}
               </>
             )}
           </Button>
@@ -375,7 +376,7 @@ export default function SettingsPage() {
             disabled={isSaving}
             className="sm:w-auto"
           >
-            Reset to Defaults
+            {t("reset_defaults")}
           </Button>
 
           <Button
@@ -384,7 +385,7 @@ export default function SettingsPage() {
             disabled={isSaving}
             className="sm:w-auto"
           >
-            Back to Dashboard
+            {t("back")}
           </Button>
         </div>
 
@@ -394,10 +395,9 @@ export default function SettingsPage() {
             <div className="flex items-start gap-3">
               <Shield className="h-5 w-5 text-primary mt-0.5 shrink-0" />
               <div className="space-y-1">
-                <p className="text-sm font-medium">Your Privacy Matters</p>
+                <p className="text-sm font-medium">{t("privacy_info")}</p>
                 <p className="text-xs text-muted-foreground">
-                  All your data is encrypted end-to-end. We never sell your data. You have complete control
-                  over what features you use and how long we store your information.
+                  {t("privacy_info_desc")}
                 </p>
               </div>
             </div>

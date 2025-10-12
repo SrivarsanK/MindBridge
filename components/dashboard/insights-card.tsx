@@ -4,8 +4,10 @@ import { Lightbulb, X, TrendingUp, Sparkles } from "lucide-react"
 import { useQuery, useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { cn } from "@/lib/utils"
+import { useLocale } from "@/components/locale-provider"
 
 export default function InsightsCard() {
+  const { t } = useLocale()
   const insights = useQuery(api.analytics.getUserInsights)
   const dismissInsight = useMutation(api.analytics.dismissInsight)
 
@@ -13,17 +15,21 @@ export default function InsightsCard() {
     return (
       <Card className="overflow-hidden border-primary/10 shadow-md hover:shadow-lg transition-all duration-300">
         <CardHeader className="bg-gradient-to-br from-primary/5 to-transparent border-b">
-          <div className="flex items-center gap-2">
-            <Lightbulb className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Personal Insights</CardTitle>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-600 shadow-lg shadow-yellow-500/20">
+                <Lightbulb className="h-5 w-5 text-white" />
+              </div>
+              <CardTitle className="text-lg">{t("insights_card")}</CardTitle>
+            </div>
+            <p className="text-xs text-muted-foreground">{t("insights_desc")}</p>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">Your wellness patterns</p>
         </CardHeader>
         <CardContent className="p-4">
           <div className="text-center py-8">
             <Sparkles className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
             <p className="text-sm text-muted-foreground">
-              Check in daily to unlock personalized insights about your wellness journey
+              {t("insights_empty")}
             </p>
           </div>
         </CardContent>
@@ -45,36 +51,44 @@ export default function InsightsCard() {
   return (
     <Card className="overflow-hidden border-primary/10 shadow-md hover:shadow-lg transition-all duration-300">
       <CardHeader className="bg-gradient-to-br from-primary/5 to-transparent border-b">
-        <div className="flex items-center gap-2">
-          <Lightbulb className="h-5 w-5 text-primary" />
-          <CardTitle className="text-lg">Personal Insights</CardTitle>
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-600 shadow-lg shadow-yellow-500/20">
+              <Lightbulb className="h-5 w-5 text-white" />
+            </div>
+            <CardTitle className="text-lg">{t("insights_card")}</CardTitle>
+          </div>
+          <p className="text-xs text-muted-foreground">{t("insights_desc")}</p>
         </div>
-        <p className="text-xs text-muted-foreground mt-1">Your wellness patterns</p>
       </CardHeader>
       <CardContent className="p-4">
-        <div className="space-y-3">
+        <div className="flex flex-col gap-3">
           {insights.slice(0, 3).map((insight) => {
             const Icon = getInsightIcon(insight.insightType)
             
             return (
               <div
                 key={insight._id}
-                className="relative group p-4 rounded-2xl border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent hover:from-primary/10 transition-all duration-300"
+                className="relative group p-4 rounded-2xl border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent hover:from-primary/10 transition-all duration-300 hover:shadow-md"
               >
                 <button
                   onClick={() => dismissInsight({ insightId: insight._id })}
                   className="absolute top-2 right-2 p-1 rounded-lg hover:bg-background/80 transition-colors opacity-0 group-hover:opacity-100"
-                  title="Dismiss"
+                  title={t("dismiss")}
                 >
                   <X className="h-3 w-3 text-muted-foreground" />
                 </button>
                 
                 <div className="flex gap-3">
-                  <div className="flex-shrink-0 h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Icon className="h-5 w-5 text-primary" />
+                  <div className="flex items-center justify-center flex-shrink-0 h-11 w-11 rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-md shadow-primary/20">
+                    <Icon className="h-5 w-5 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-semibold mb-1">{insight.title}</h4>
+                    <h4 className="text-sm font-semibold mb-1">
+                      {insight.insightType === "mood_pattern" ? t("insight_mood_pattern") : 
+                       insight.insightType === "activity_streak" ? t("insight_activity_streak") : 
+                       insight.title}
+                    </h4>
                     <p className="text-xs text-muted-foreground leading-relaxed">
                       {insight.description}
                     </p>

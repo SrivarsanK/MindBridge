@@ -46,7 +46,7 @@ export default function EmergencySupportBar() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button asChild variant="destructive" className="h-8">
+            <Button asChild className="h-8 bg-red-600 hover:bg-red-700 text-white border-red-600">
               <a href={`tel:${INDIA_EMERGENCY.teleManas}`} aria-label="Call Tele-MANAS now">
                 Call 14416
               </a>

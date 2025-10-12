@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { useLocale } from "@/components/locale-provider"
 import { 
   Search, 
   Users, 
@@ -20,25 +21,34 @@ import {
   Loader2,
   MessageCircle,
   Shield,
-  Globe
+  Globe,
+  Frown,
+  CloudRain,
+  Zap,
+  Meh,
+  Smile,
+  HelpCircle
 } from "lucide-react"
 
 const MOOD_OPTIONS = [
-  { value: "anxious", label: "Anxious", color: "bg-orange-500" },
-  { value: "lonely", label: "Lonely", color: "bg-blue-500" },
-  { value: "stressed", label: "Stressed", color: "bg-red-500" },
-  { value: "sad", label: "Sad", color: "bg-purple-500" },
-  { value: "hopeful", label: "Hopeful", color: "bg-green-500" },
-  { value: "confused", label: "Confused", color: "bg-yellow-500" },
+  { value: "anxious", label: "mood_anxious", icon: Zap },
+  { value: "lonely", label: "mood_lonely", icon: CloudRain },
+  { value: "stressed", label: "mood_stressed", icon: Frown },
+  { value: "sad", label: "mood_sad", icon: Meh },
+  { value: "hopeful", label: "mood_hopeful", icon: Smile },
+  { value: "confused", label: "mood_confused", icon: HelpCircle },
 ]
 
 const INTEREST_OPTIONS = [
-  "Music", "Reading", "Gaming", "Sports", "Art", "Coding",
-  "Movies", "Travel", "Cooking", "Photography", "Fitness", "Meditation",
-  "Writing", "Dancing", "Nature", "Science", "Fashion", "Volunteering"
+  "interest_music", "interest_reading", "interest_gaming", "interest_sports", 
+  "interest_art", "interest_coding", "interest_movies", "interest_travel", 
+  "interest_cooking", "interest_photography", "interest_fitness", "interest_meditation",
+  "interest_writing", "interest_dancing", "interest_nature", "interest_science", 
+  "interest_fashion", "interest_volunteering"
 ]
 
 export default function PeerSearchPage() {
+  const { t } = useLocale()
   const router = useRouter()
   const [selectedMood, setSelectedMood] = useState<string>("")
   const [lonelinessLevel, setLonelinessLevel] = useState<number>(5)
@@ -53,7 +63,7 @@ export default function PeerSearchPage() {
   const onlineStats = useQuery(api.peerMatching.getOnlineUsersStats)
 
   const filteredInterests = INTEREST_OPTIONS.filter(interest =>
-    interest.toLowerCase().includes(searchQuery.toLowerCase())
+    t(interest).toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   const toggleInterest = (interest: string) => {
@@ -66,12 +76,12 @@ export default function PeerSearchPage() {
 
   const handleSearch = async () => {
     if (!selectedMood) {
-      alert("Please select your current mood")
+      alert(t("select_mood_first"))
       return
     }
 
     if (selectedInterests.length === 0) {
-      alert("Please select at least one interest")
+      alert(t("select_interest_first"))
       return
     }
 
@@ -100,11 +110,11 @@ export default function PeerSearchPage() {
       setTimeout(() => {
         clearInterval(checkForMatch)
         setIsSearching(false)
-        alert("No matches found. Please try again later.")
+        alert(t("no_matches_found"))
       }, 60000)
     } catch (error) {
       console.error("Error requesting peer match:", error)
-      alert("Failed to request peer match. Please try again.")
+      alert(t("failed_peer_match"))
       setIsSearching(false)
     }
   }
@@ -116,12 +126,12 @@ export default function PeerSearchPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between pl-0 lg:pl-0">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-md shadow-primary/25">
                 <Users className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold">Find a Peer</h1>
-                <p className="text-xs text-muted-foreground">Anonymous & encrypted connections</p>
+                <h1 className="text-xl font-bold">{t("find_peer_title")}</h1>
+                <p className="text-xs text-muted-foreground">{t("peer_anonymous_encrypted")}</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -131,21 +141,21 @@ export default function PeerSearchPage() {
                   <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20">
                     <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
                     <span className="font-medium text-green-700 dark:text-green-400">
-                      {onlineStats.onlineCount} Online
+                      {onlineStats.onlineCount} {t("online")}
                     </span>
                   </div>
                   {onlineStats.searchingCount > 0 && (
                     <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20">
                       <Loader2 className="h-3 w-3 text-orange-500 animate-spin" />
                       <span className="font-medium text-orange-700 dark:text-orange-400">
-                        {onlineStats.searchingCount} Searching
+                        {onlineStats.searchingCount} {t("searching_status")}
                       </span>
                     </div>
                   )}
                 </div>
               )}
               <Button variant="ghost" onClick={() => router.push("/dashboard")}>
-                Back
+                {t("back")}
               </Button>
             </div>
           </div>
@@ -156,14 +166,14 @@ export default function PeerSearchPage() {
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20">
                 <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
                 <span className="font-medium text-green-700 dark:text-green-400">
-                  {onlineStats.onlineCount} Online
+                  {onlineStats.onlineCount} {t("online_text")}
                 </span>
               </div>
               {onlineStats.searchingCount > 0 && (
                 <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20">
                   <Loader2 className="h-3 w-3 text-orange-500 animate-spin" />
                   <span className="font-medium text-orange-700 dark:text-orange-400">
-                    {onlineStats.searchingCount} Searching
+                    {onlineStats.searchingCount} {t("searching_text")}
                   </span>
                 </div>
               )}
@@ -183,8 +193,8 @@ export default function PeerSearchPage() {
                     <Users className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Community Status</p>
-                    <p className="text-xs text-muted-foreground">Real-time peer availability</p>
+                    <p className="text-sm font-medium">{t("community_status")}</p>
+                    <p className="text-xs text-muted-foreground">{t("realtime_availability")}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4 w-full sm:w-auto">
@@ -195,7 +205,7 @@ export default function PeerSearchPage() {
                         {onlineStats.onlineCount}
                       </p>
                     </div>
-                    <p className="text-xs text-muted-foreground">Users Online</p>
+                    <p className="text-xs text-muted-foreground">{t("users_online")}</p>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-card/50 border">
                     <div className="flex items-center justify-center gap-1 mb-1">
@@ -204,7 +214,7 @@ export default function PeerSearchPage() {
                         {onlineStats.searchingCount}
                       </p>
                     </div>
-                    <p className="text-xs text-muted-foreground">In Search Queue</p>
+                    <p className="text-xs text-muted-foreground">{t("in_search_queue")}</p>
                   </div>
                 </div>
               </div>
@@ -218,10 +228,9 @@ export default function PeerSearchPage() {
             <div className="flex items-start gap-3">
               <Shield className="h-5 w-5 text-primary mt-0.5 shrink-0" />
               <div className="space-y-1">
-                <p className="text-sm font-medium">Your Privacy is Protected</p>
+                <p className="text-sm font-medium">{t("privacy_protected")}</p>
                 <p className="text-xs text-muted-foreground">
-                  All conversations are encrypted end-to-end. Your identity remains anonymous. 
-                  Connections are based on mood compatibility and shared interests.
+                  {t("privacy_protected_desc")}
                 </p>
               </div>
             </div>
@@ -236,26 +245,31 @@ export default function PeerSearchPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Heart className="h-5 w-5 text-primary" />
-                  How are you feeling?
+                  {t("how_feeling")}
                 </CardTitle>
-                <CardDescription>Select your current mood to find compatible peers</CardDescription>
+                <CardDescription>{t("select_mood_desc")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {MOOD_OPTIONS.map((mood) => (
-                    <button
-                      key={mood.value}
-                      onClick={() => setSelectedMood(mood.value)}
-                      className={`p-4 rounded-xl border-2 transition-all hover:scale-105 ${
-                        selectedMood === mood.value
-                          ? `border-primary bg-primary/10 shadow-lg`
-                          : "border-border hover:border-primary/50"
-                      }`}
-                    >
-                      <div className={`h-8 w-8 rounded-full ${mood.color} mx-auto mb-2`} />
-                      <p className="text-sm font-medium text-center">{mood.label}</p>
-                    </button>
-                  ))}
+                  {MOOD_OPTIONS.map((mood) => {
+                    const IconComponent = mood.icon
+                    return (
+                      <button
+                        key={mood.value}
+                        onClick={() => setSelectedMood(mood.value)}
+                        className={`p-4 rounded-xl border-2 transition-all hover:scale-105 ${
+                          selectedMood === mood.value
+                            ? `border-primary bg-primary/10 shadow-lg`
+                            : "border-border hover:border-primary/50"
+                        }`}
+                      >
+                        <div className="flex flex-col items-center gap-2">
+                          <IconComponent className="w-8 h-8" />
+                          <p className="text-sm font-medium text-center">{t(mood.label)}</p>
+                        </div>
+                      </button>
+                    )
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -265,18 +279,18 @@ export default function PeerSearchPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Globe className="h-5 w-5 text-primary" />
-                  Connection Need Level
+                  {t("connection_need_level")}
                 </CardTitle>
                 <CardDescription>
-                  How much do you need to connect right now? (1-10)
+                  {t("connection_need_desc")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Just browsing</span>
+                    <span className="text-sm text-muted-foreground">{t("just_browsing")}</span>
                     <span className="text-2xl font-bold text-primary">{lonelinessLevel}</span>
-                    <span className="text-sm text-muted-foreground">Really need someone</span>
+                    <span className="text-sm text-muted-foreground">{t("really_need_someone")}</span>
                   </div>
                   <Label htmlFor="loneliness-slider" className="sr-only">
                     Connection need level slider from 1 to 10
@@ -312,9 +326,9 @@ export default function PeerSearchPage() {
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       <Sparkles className="h-5 w-5 text-primary" />
-                      Your Interests
+                      {t("interests_title")}
                     </CardTitle>
-                    <CardDescription>Select topics you'd like to talk about</CardDescription>
+                    <CardDescription>{t("interests_desc")}</CardDescription>
                   </div>
                   <Button
                     variant="outline"
@@ -322,7 +336,7 @@ export default function PeerSearchPage() {
                     onClick={() => setShowFilters(!showFilters)}
                   >
                     <Filter className="h-4 w-4 mr-2" />
-                    {showFilters ? "Hide" : "Show"} Search
+                    {showFilters ? t("hide") : t("show")} {t("search_text")}
                   </Button>
                 </div>
               </CardHeader>
@@ -332,7 +346,7 @@ export default function PeerSearchPage() {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search interests..."
+                      placeholder={t("search_interests")}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="pl-10"
@@ -350,7 +364,7 @@ export default function PeerSearchPage() {
                         className="px-3 py-1 gap-1 cursor-pointer hover:bg-destructive/20"
                         onClick={() => toggleInterest(interest)}
                       >
-                        {interest}
+                        {t(interest)}
                         <X className="h-3 w-3" />
                       </Badge>
                     ))}
@@ -366,14 +380,14 @@ export default function PeerSearchPage() {
                       className="px-3 py-1.5 cursor-pointer hover:scale-105 transition-transform"
                       onClick={() => toggleInterest(interest)}
                     >
-                      {interest}
+                      {t(interest)}
                     </Badge>
                   ))}
                 </div>
 
                 {filteredInterests.length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    No interests found matching "{searchQuery}"
+                    {t("no_interests_match")}
                   </p>
                 )}
               </CardContent>
@@ -383,17 +397,17 @@ export default function PeerSearchPage() {
             <Button
               onClick={handleSearch}
               disabled={isSearching || !selectedMood || selectedInterests.length === 0}
-              className="w-full h-14 text-lg bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-lg"
+              className="w-full h-14 text-lg font-semibold bg-gradient-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
             >
               {isSearching ? (
                 <>
                   <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  Finding Your Perfect Match...
+                  {t("searching_peer")}
                 </>
               ) : (
                 <>
                   <Search className="h-5 w-5 mr-2" />
-                  Find a Peer Connection
+                  {t("find_peer_connection")}
                 </>
               )}
             </Button>
@@ -406,7 +420,7 @@ export default function PeerSearchPage() {
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <MessageCircle className="h-5 w-5 text-primary" />
-                  Active Connections
+                  {t("active_matches_title")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -419,9 +433,9 @@ export default function PeerSearchPage() {
                         onClick={() => router.push(`/peer-chat/${match._id}`)}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium">Anonymous Peer</span>
+                          <span className="text-sm font-medium">{t("anonymous_peer")}</span>
                           <Badge variant="secondary" className="text-xs">
-                            {Math.round(match.matchScore * 100)}% match
+                            {Math.round(match.matchScore * 100)}{t("percent_match")}
                           </Badge>
                         </div>
                         <p className="text-xs text-muted-foreground line-clamp-2">
@@ -429,7 +443,7 @@ export default function PeerSearchPage() {
                         </p>
                         <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
                           <MessageCircle className="h-3 w-3" />
-                          <span>{match.messageCount} messages</span>
+                          <span>{match.messageCount} {t("messages")}</span>
                         </div>
                       </div>
                     ))}
@@ -437,9 +451,9 @@ export default function PeerSearchPage() {
                 ) : (
                   <div className="text-center py-6">
                     <Users className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
-                    <p className="text-sm text-muted-foreground">No active connections yet</p>
+                    <p className="text-sm text-muted-foreground">{t("no_active_matches")}</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Start searching to connect with peers
+                      {t("start_search")}
                     </p>
                   </div>
                 )}
@@ -449,7 +463,7 @@ export default function PeerSearchPage() {
             {/* How it Works */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">How Peer Matching Works</CardTitle>
+                <CardTitle className="text-lg">{t("matching_tips")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-start gap-3">
@@ -457,8 +471,8 @@ export default function PeerSearchPage() {
                     <span className="text-sm font-bold text-primary">1</span>
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Share Your Mood</p>
-                    <p className="text-xs text-muted-foreground">Tell us how you're feeling</p>
+                    <p className="text-sm font-medium">{t("tip_honest")}</p>
+                    <p className="text-xs text-muted-foreground">{t("tip_honest_desc")}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -466,8 +480,8 @@ export default function PeerSearchPage() {
                     <span className="text-sm font-bold text-primary">2</span>
                   </div>
                   <div>
-                    <p className="text-sm font-medium">AI Finds Matches</p>
-                    <p className="text-xs text-muted-foreground">Based on mood & interests</p>
+                    <p className="text-sm font-medium">{t("tip_interests")}</p>
+                    <p className="text-xs text-muted-foreground">{t("tip_interests_desc")}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -475,8 +489,8 @@ export default function PeerSearchPage() {
                     <span className="text-sm font-bold text-primary">3</span>
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Start Chatting</p>
-                    <p className="text-xs text-muted-foreground">Anonymous & encrypted</p>
+                    <p className="text-sm font-medium">{t("tip_available")}</p>
+                    <p className="text-xs text-muted-foreground">{t("tip_available_desc")}</p>
                   </div>
                 </div>
               </CardContent>
@@ -487,14 +501,14 @@ export default function PeerSearchPage() {
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Shield className="h-5 w-5 text-yellow-500" />
-                  Safety First
+                  {t("safety_first")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-xs text-muted-foreground">
-                <p>• Never share personal information</p>
-                <p>• Report inappropriate behavior</p>
-                <p>• You can end conversations anytime</p>
-                <p>• Crisis support available 24/7</p>
+                <p>• {t("safety_no_personal_info")}</p>
+                <p>• {t("safety_report_behavior")}</p>
+                <p>• {t("safety_end_anytime")}</p>
+                <p>• {t("safety_crisis_support")}</p>
               </CardContent>
             </Card>
           </div>

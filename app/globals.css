@@ -174,19 +174,179 @@
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
 }
 
-/* mood-adaptive subtle tints without new colors */
+/* ============================================
+   MOOD-ADAPTIVE UI SYSTEM
+   "Your UI adapts gently to your state"
+   ============================================ */
+
+/* Base transition for smooth mood changes */
+body {
+  transition: background-color 800ms ease, color 800ms ease;
+}
+
+* {
+  transition-property: color, background-color, border-color, box-shadow;
+  transition-duration: 600ms;
+  transition-timing-function: ease-in-out;
+}
+
+/* NEUTRAL STATE - Balanced, standard interface */
+[data-mood="neutral"] {
+  --primary: hsl(172 32% 35%); /* Balanced sage/teal */
+  --background: hsl(180 15% 98%);
+  --card: hsl(180 15% 99%);
+  --border: hsl(180 10% 90%);
+  --mood-spacing: 1;
+  --mood-shadow: 0.15;
+  --mood-contrast: 1;
+}
+
+/* ANXIOUS STATE - Calming, spacious, cooler tones */
 [data-mood="anxious"] {
-  --primary: hsl(172 28% 37%);
+  --primary: hsl(200 35% 40%); /* Calming blue-teal */
+  --background: hsl(200 20% 97%); /* Cooler, airier background */
+  --card: hsl(200 25% 98%);
+  --border: hsl(200 15% 88%);
+  --muted: hsl(200 15% 94%);
+  --mood-spacing: 1.15; /* More breathing room */
+  --mood-shadow: 0.08; /* Softer shadows */
+  --mood-contrast: 0.92; /* Slightly reduced contrast */
 }
+
+/* Apply spacious layout for anxious state */
+[data-mood="anxious"] .mood-adaptive-card {
+  padding: calc(1rem * var(--mood-spacing));
+  gap: calc(0.75rem * var(--mood-spacing));
+}
+
+[data-mood="anxious"] .mood-adaptive-grid {
+  gap: calc(1.5rem * var(--mood-spacing));
+}
+
+/* LOW ENERGY STATE - Warmer, softer, comforting */
 [data-mood="low"] {
-  --primary: hsl(172 24% 38%);
+  --primary: hsl(165 28% 38%); /* Gentler, muted teal */
+  --background: hsl(35 25% 96%); /* Warm, soft beige tone */
+  --card: hsl(35 30% 97%);
+  --border: hsl(35 12% 86%);
+  --muted: hsl(35 20% 92%);
+  --mood-spacing: 1;
+  --mood-shadow: 0.06; /* Very soft shadows */
+  --mood-contrast: 0.88; /* Lower contrast for comfort */
 }
+
+/* Softer visual elements for low energy */
+[data-mood="low"] .card,
+[data-mood="low"] .mood-adaptive-card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, calc(0.05 * var(--mood-shadow)));
+}
+
+[data-mood="low"] button {
+  font-weight: 500; /* Slightly lighter weight */
+}
+
+/* LONELY STATE - Warmer, connecting, inviting */
 [data-mood="lonely"] {
-  --primary: hsl(172 30% 33%);
+  --primary: hsl(25 45% 42%); /* Warm, embracing terra cotta */
+  --background: hsl(25 20% 95%); /* Warm, inviting background */
+  --card: hsl(25 25% 96%);
+  --border: hsl(25 15% 84%);
+  --muted: hsl(25 18% 90%);
+  --accent: hsl(35 85% 50%); /* Brighter warm accent */
+  --mood-spacing: 1.05;
+  --mood-shadow: 0.12;
+  --mood-contrast: 0.95;
 }
+
+/* Enhanced warmth and connection cues */
+[data-mood="lonely"] .mood-adaptive-card {
+  border-width: 1.5px;
+}
+
+[data-mood="lonely"] button:hover {
+  transform: scale(1.03); /* More responsive to interaction */
+}
+
+/* CRISIS STATE - Clear, high contrast, focused */
 [data-mood="crisis"] {
-  --primary: hsl(172 32% 35%);
+  --primary: hsl(172 32% 35%); /* Standard primary */
+  --background: hsl(0 0% 98%);
+  --card: hsl(0 0% 100%);
+  --border: hsl(0 0% 85%);
+  --destructive: hsl(355 85% 50%); /* More visible red */
+  --mood-spacing: 1.1; /* Clear spacing */
+  --mood-shadow: 0.2; /* Stronger shadows for clarity */
+  --mood-contrast: 1.05; /* Higher contrast */
 }
+
+[data-mood="crisis"] .mood-adaptive-card {
+  border-width: 2px;
+}
+
+/* ============================================
+   MOOD-ADAPTIVE ANIMATION SPEEDS
+   ============================================ */
+
+/* Slower, calming animations for anxious state */
+[data-mood="anxious"] * {
+  transition-duration: 900ms;
+}
+
+[data-mood="anxious"] .animate-breathe {
+  animation-duration: 6s; /* Slower breathing */
+}
+
+/* Gentler animations for low energy */
+[data-mood="low"] * {
+  transition-duration: 1000ms;
+}
+
+[data-mood="low"] .animate-breathe {
+  animation-duration: 8s; /* Very slow, gentle */
+}
+
+/* Standard for other states */
+[data-mood="neutral"] *,
+[data-mood="lonely"] *,
+[data-mood="crisis"] * {
+  transition-duration: 600ms;
+}
+
+/* ============================================
+   MOOD-ADAPTIVE UTILITY CLASSES
+   ============================================ */
+
+.mood-adaptive-card {
+  transition: padding 600ms ease, gap 600ms ease, border-width 600ms ease;
+}
+
+.mood-adaptive-grid {
+  transition: gap 600ms ease;
+}
+
+.mood-adaptive-text {
+  transition: font-weight 600ms ease, letter-spacing 600ms ease;
+}
+
+/* Subtle background pattern intensity based on mood */
+[data-mood="anxious"] .bg-pattern {
+  opacity: 0.3; /* Lighter for less visual noise */
+}
+
+[data-mood="low"] .bg-pattern {
+  opacity: 0.2; /* Very subtle */
+}
+
+[data-mood="lonely"] .bg-pattern {
+  opacity: 0.45; /* Slightly more present */
+}
+
+[data-mood="neutral"] .bg-pattern,
+[data-mood="crisis"] .bg-pattern {
+  opacity: 0.35; /* Standard */
+}
+
+/* mood-adaptive subtle tints without new colors */
 
 /* Breathing animation for grid background */
 @keyframes breathe {
