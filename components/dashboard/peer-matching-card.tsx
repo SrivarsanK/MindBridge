@@ -197,23 +197,29 @@ export default function PeerMatchingCard() {
             <div className="flex flex-col gap-2">
               <div className="text-sm font-medium text-muted-foreground">{t("active_chats")}</div>
               {activeMatches.map((match) => (
-                <div key={match._id} className="flex items-center justify-between p-3 rounded-xl bg-primary/5 border border-primary/10 hover:bg-primary/10 transition-colors">
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div key={match._id} className="flex items-center justify-between p-3 rounded-xl bg-primary/5 border border-primary/10 hover:bg-primary/10 transition-colors group">
+                  <button
+                    onClick={() => router.push(`/peer-chat/${match._id}`)}
+                    className="flex items-center gap-2.5 min-w-0 flex-1 text-left"
+                  >
                     <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-gradient-to-br from-primary to-primary/80 shadow-md shadow-primary/20 shrink-0">
                       <MessageCircle className="h-4 w-4 text-white" />
                     </div>
                     <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-                      <div className="text-sm font-medium truncate">{t("peer_title")}</div>
+                      <div className="text-sm font-medium truncate">{match.peerDisplayName}</div>
                       <div className="text-xs text-muted-foreground truncate">
-                        {match.messageCount} messages • {match.iceBreaker}
+                        {match.messageCount || 0} messages • {match.iceBreaker || "Start chatting"}
                       </div>
                     </div>
-                  </div>
+                  </button>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleEndMatch(match._id)}
-                    className="h-8 w-8 p-0 shrink-0 hover:bg-destructive/10 hover:text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleEndMatch(match._id)
+                    }}
+                    className="h-8 w-8 p-0 shrink-0 hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <X className="h-4 w-4" />
                   </Button>

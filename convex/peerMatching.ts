@@ -212,7 +212,32 @@ export const getActiveMatches = query({
       .filter((q) => q.eq(q.field("status"), "active"))
       .collect();
 
-    return [...matches1, ...matches2];
+    const allMatches = [...matches1, ...matches2];
+    
+    // Enrich matches with peer display names
+    const enrichedMatches = await Promise.all(
+      allMatches.map(async (match) => {
+        // Determine who is the peer (the other user)
+        const peerId = match.user1Id === userId ? match.user2Id : match.user1Id;
+        
+        // Get peer's profile for display name
+        const peerProfile = await ctx.db
+          .query("userProfiles")
+          .withIndex("by_user_id", (q) => q.eq("userId", peerId))
+          .first();
+        
+        // Generate or use existing display name (keep anonymous)
+        const peerDisplayName = peerProfile?.displayName || `Peer${peerId.slice(-4)}`;
+        
+        return {
+          ...match,
+          peerId,
+          peerDisplayName,
+        };
+      })
+    );
+    
+    return enrichedMatches;
   },
 });
 
@@ -347,6 +372,76 @@ export const getPeerMessages = query({
       deliveryStatus: msg.deliveryStatus,
       isMine: msg.senderId === userId,
     }));
+  },
+});
+
+// Mark messages as delivered (called when peer receives messages)
+export const markMessagesAsDelivered = mutation({
+  args: {
+    matchId: v.id("peerMatches"),
+    messageIds: v.array(v.id("peerMessages")),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    const match = await ctx.db.get(args.matchId);
+    if (!match) {
+      throw new Error("Match not found");
+    }
+
+    if (match.user1Id !== userId && match.user2Id !== userId) {
+      throw new Error("Access denied");
+    }
+
+    // Update all specified messages to "delivered" if they're still "sent"
+    for (const messageId of args.messageIds) {
+      const message = await ctx.db.get(messageId);
+      if (message && message.senderId !== userId && message.deliveryStatus === "sent") {
+        await ctx.db.patch(messageId, {
+          deliveryStatus: "delivered",
+        });
+      }
+    }
+
+    return { success: true };
+  },
+});
+
+// Mark messages as seen (called when user is viewing the chat)
+export const markMessagesAsSeen = mutation({
+  args: {
+    matchId: v.id("peerMatches"),
+    messageIds: v.array(v.id("peerMessages")),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    const match = await ctx.db.get(args.matchId);
+    if (!match) {
+      throw new Error("Match not found");
+    }
+
+    if (match.user1Id !== userId && match.user2Id !== userId) {
+      throw new Error("Access denied");
+    }
+
+    // Update all specified messages to "read" if sent by peer
+    for (const messageId of args.messageIds) {
+      const message = await ctx.db.get(messageId);
+      if (message && message.senderId !== userId && message.deliveryStatus !== "read") {
+        await ctx.db.patch(messageId, {
+          deliveryStatus: "read",
+        });
+      }
+    }
+
+    return { success: true };
   },
 });
 

@@ -39,6 +39,7 @@ interface DecryptedMessage {
   timestamp: number
   isMine: boolean
   decryptionFailed?: boolean
+  deliveryStatus?: "sent" | "delivered" | "read"
 }
 
 export default function PeerChatPage({ params }: { params: Promise<{ matchId: string }> }) {
@@ -69,6 +70,8 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
 
   const sendMessage = useMutation(api.peerMatching.sendPeerMessage)
   const endChat = useMutation(api.peerMatching.endPeerMatch)
+  const markAsDelivered = useMutation(api.peerMatching.markMessagesAsDelivered)
+  const markAsSeen = useMutation(api.peerMatching.markMessagesAsSeen)
 
   // Initialize encryption keys
   useEffect(() => {
@@ -143,6 +146,7 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
             plaintext,
             timestamp: msg.timestamp,
             isMine: msg.isMine,
+            deliveryStatus: msg.deliveryStatus,
           })
         } catch (error) {
           console.error("Failed to decrypt message:", error)
@@ -153,6 +157,7 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
             timestamp: msg.timestamp,
             isMine: msg.isMine,
             decryptionFailed: true,
+            deliveryStatus: msg.deliveryStatus,
           })
         }
       }
@@ -174,13 +179,47 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
     }
   }, [matchDetails])
 
-  // Auto-send queued messages when encryption becomes ready
+  // Mark peer messages as delivered when received
+  useEffect(() => {
+    if (!decryptedMessages.length || !matchId) return
+
+    const undeliveredMessages = decryptedMessages
+      .filter(msg => !msg.isMine && msg.deliveryStatus === "sent" && !msg._id.startsWith('temp-'))
+      .map(msg => msg._id as Id<"peerMessages">)
+
+    if (undeliveredMessages.length > 0) {
+      markAsDelivered({ matchId, messageIds: undeliveredMessages })
+        .catch(err => console.error("Failed to mark as delivered:", err))
+    }
+  }, [decryptedMessages, matchId, markAsDelivered])
+
+  // Mark peer messages as seen when viewing chat (after 1 second delay)
+  useEffect(() => {
+    if (!decryptedMessages.length || !matchId) return
+
+    const timer = setTimeout(() => {
+      const unseenMessages = decryptedMessages
+        .filter(msg => !msg.isMine && msg.deliveryStatus !== "read" && !msg._id.startsWith('temp-'))
+        .map(msg => msg._id as Id<"peerMessages">)
+
+      if (unseenMessages.length > 0) {
+        markAsSeen({ matchId, messageIds: unseenMessages })
+          .catch(err => console.error("Failed to mark as seen:", err))
+      }
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, [decryptedMessages, matchId, markAsSeen])
+
+  // Auto-send queued messages when encryption becomes ready (ONE TIME ONLY)
   useEffect(() => {
     if (encryptionKey && optimisticMessages.length > 0) {
       console.log(`📤 Encryption ready! Sending ${optimisticMessages.length} queued messages...`)
       
       // Send all queued optimistic messages
-      optimisticMessages.forEach(async (msg) => {
+      const messagesToSend = [...optimisticMessages]; // Copy to avoid stale closure
+      
+      messagesToSend.forEach(async (msg) => {
         try {
           const { ciphertext, iv } = await encryptMessage(encryptionKey, msg.plaintext)
           await sendMessage({
@@ -189,12 +228,14 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
             iv,
           })
           console.log(`✅ Queued message sent: "${msg.plaintext.substring(0, 20)}..."`)
+          // Remove from optimistic messages after sending
+          setOptimisticMessages(prev => prev.filter(m => m._id !== msg._id))
         } catch (error) {
           console.error("Failed to send queued message:", error)
         }
       })
     }
-  }, [encryptionKey, optimisticMessages, matchId, sendMessage])
+  }, [encryptionKey]) // Only run when encryption key becomes available
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -215,7 +256,7 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
       timestamp: tempTimestamp,
       isMine: true,
     }
-    setOptimisticMessages(prev => [...prev, optimisticMsg])
+    
     setMessageInput("")
     
     // Focus back on input for quick typing
@@ -224,12 +265,15 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
     // If encryption is not ready yet, queue the message
     if (!encryptionKey) {
       console.log("⏳ Message queued - waiting for encryption key")
+      setOptimisticMessages(prev => [...prev, optimisticMsg])
       // The message will stay in optimisticMessages until encryption is ready
-      // In a production app, you'd implement a proper queue system
       return
     }
 
+    // Encryption is ready - show optimistic message and send immediately
+    setOptimisticMessages(prev => [...prev, optimisticMsg])
     setIsEncrypting(true)
+    
     try {
       // Encrypt message client-side
       const { ciphertext, iv } = await encryptMessage(encryptionKey, messageText)
@@ -242,6 +286,10 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
       })
 
       console.log("✅ Message sent successfully")
+      
+      // Remove optimistic message after successful send
+      // The real message will come from the server via the messages query
+      setOptimisticMessages(prev => prev.filter(m => m._id !== optimisticMsg._id))
     } catch (error) {
       console.error("Failed to send message:", error)
       // Remove optimistic message on error
@@ -405,6 +453,29 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
                       </p>
                       {msg.isMine && isOptimistic && (
                         <Loader2 className="h-3 w-3 animate-spin opacity-50" />
+                      )}
+                      {msg.isMine && !isOptimistic && msg.deliveryStatus && (
+                        <span className="flex items-center" title={
+                          msg.deliveryStatus === "sent" ? "Sent" :
+                          msg.deliveryStatus === "delivered" ? "Delivered" :
+                          "Seen"
+                        }>
+                          {msg.deliveryStatus === "sent" && (
+                            <Check className="h-3 w-3 opacity-50" />
+                          )}
+                          {msg.deliveryStatus === "delivered" && (
+                            <div className="relative">
+                              <Check className="h-3 w-3 opacity-70" />
+                              <Check className="h-3 w-3 opacity-70 absolute -left-1" />
+                            </div>
+                          )}
+                          {msg.deliveryStatus === "read" && (
+                            <div className="relative text-blue-400">
+                              <Check className="h-3 w-3" />
+                              <Check className="h-3 w-3 absolute -left-1" />
+                            </div>
+                          )}
+                        </span>
                       )}
                     </div>
                   </div>
