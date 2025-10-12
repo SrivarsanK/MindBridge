@@ -54,7 +54,10 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
   const [preKeyPair, setPreKeyPair] = useState<SerializedKeyPair | null>(null)
   const [isInitializing, setIsInitializing] = useState(true)
   const [showEndConfirm, setShowEndConfirm] = useState(false)
+  const [optimisticMessages, setOptimisticMessages] = useState<DecryptedMessage[]>([])
+  const [peerOnline, setPeerOnline] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const matchId = matchIdString as Id<"peerMatches">
   const matchDetails = useQuery(api.peerMatching.getMatchDetails, { matchId })
@@ -155,10 +158,21 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
       }
 
       setDecryptedMessages(decrypted)
+      // Clear optimistic messages that have been confirmed
+      setOptimisticMessages(prev => 
+        prev.filter(opt => !decrypted.some(msg => msg.timestamp === opt.timestamp))
+      )
     }
 
     decryptMessages()
   }, [messages, encryptionKey])
+
+  // Check peer online status (simulate - in production use presence system)
+  useEffect(() => {
+    if (matchDetails && matchDetails.status === "active") {
+      setPeerOnline(true)
+    }
+  }, [matchDetails])
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -168,10 +182,27 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
   const handleSendMessage = async () => {
     if (!messageInput.trim() || !encryptionKey || isEncrypting) return
 
+    const messageText = messageInput.trim()
+    const tempTimestamp = Date.now()
+    
+    // Add optimistic message immediately for instant feedback
+    const optimisticMsg: DecryptedMessage = {
+      _id: `temp-${tempTimestamp}`,
+      senderId: "me",
+      plaintext: messageText,
+      timestamp: tempTimestamp,
+      isMine: true,
+    }
+    setOptimisticMessages(prev => [...prev, optimisticMsg])
+    setMessageInput("")
+    
+    // Focus back on input for quick typing
+    setTimeout(() => inputRef.current?.focus(), 0)
+
     setIsEncrypting(true)
     try {
       // Encrypt message client-side
-      const { ciphertext, iv } = await encryptMessage(encryptionKey, messageInput.trim())
+      const { ciphertext, iv } = await encryptMessage(encryptionKey, messageText)
 
       // Send encrypted message
       await sendMessage({
@@ -180,10 +211,14 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
         iv,
       })
 
-      setMessageInput("")
+      console.log("✅ Message sent successfully")
     } catch (error) {
       console.error("Failed to send message:", error)
+      // Remove optimistic message on error
+      setOptimisticMessages(prev => prev.filter(m => m._id !== optimisticMsg._id))
       alert("Failed to send message. Please try again.")
+      // Restore message input
+      setMessageInput(messageText)
     } finally {
       setIsEncrypting(false)
     }
@@ -249,9 +284,17 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
                 <MessageCircle className="h-5 w-5" />
                 {matchDetails.peerDisplayName}
               </h1>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Lock className="h-3 w-3 text-green-500" />
-                <span>End-to-end encrypted</span>
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1.5">
+                  <Lock className="h-3 w-3 text-green-500" />
+                  <span>End-to-end encrypted</span>
+                </div>
+                {peerOnline && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                    <span className="text-green-600 dark:text-green-400 font-medium">Online</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -292,42 +335,59 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {decryptedMessages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
-            <MessageCircle className="h-12 w-12 mb-3 opacity-50" />
-            <p className="text-lg font-medium">No messages yet</p>
-            <p className="text-sm">Start the conversation with your peer!</p>
-          </div>
-        ) : (
-          decryptedMessages.map((msg) => (
-            <div
-              key={msg._id}
-              className={`flex ${msg.isMine ? "justify-end" : "justify-start"}`}
-            >
-              <div
-                className={`max-w-[70%] rounded-lg px-4 py-2 ${
-                  msg.isMine
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
-                } ${msg.decryptionFailed ? "border-2 border-red-500" : ""}`}
-              >
-                {msg.decryptionFailed && (
-                  <div className="flex items-center gap-1 text-xs text-red-500 mb-1">
-                    <AlertTriangle className="h-3 w-3" />
-                    <span>Decryption failed</span>
-                  </div>
-                )}
-                <p className="text-sm whitespace-pre-wrap break-words">{msg.plaintext}</p>
-                <p className="text-xs opacity-70 mt-1">
-                  {new Date(msg.timestamp).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </p>
-              </div>
+        {(() => {
+          // Combine optimistic and decrypted messages, sort by timestamp
+          const allMessages = [...decryptedMessages, ...optimisticMessages]
+            .sort((a, b) => a.timestamp - b.timestamp)
+          
+          return allMessages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+              <MessageCircle className="h-12 w-12 mb-3 opacity-50" />
+              <p className="text-lg font-medium">No messages yet</p>
+              <p className="text-sm">Start the conversation with your peer!</p>
             </div>
-          ))
-        )}
+          ) : (
+            allMessages.map((msg) => {
+              const isOptimistic = msg._id.startsWith('temp-')
+              
+              return (
+                <div
+                  key={msg._id}
+                  className={`flex ${msg.isMine ? "justify-end" : "justify-start"}`}
+                >
+                  <div
+                    className={`max-w-[70%] rounded-lg px-4 py-2 ${
+                      msg.isMine
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted"
+                    } ${msg.decryptionFailed ? "border-2 border-red-500" : ""} ${
+                      isOptimistic ? "opacity-80" : ""
+                    }`}
+                  >
+                    {msg.decryptionFailed && (
+                      <div className="flex items-center gap-1 text-xs text-red-500 mb-1">
+                        <AlertTriangle className="h-3 w-3" />
+                        <span>Decryption failed</span>
+                      </div>
+                    )}
+                    <p className="text-sm whitespace-pre-wrap break-words">{msg.plaintext}</p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <p className="text-xs opacity-70">
+                        {new Date(msg.timestamp).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                      {msg.isMine && isOptimistic && (
+                        <Loader2 className="h-3 w-3 animate-spin opacity-50" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )
+            })
+          )
+        })()}
         <div ref={messagesEndRef} />
       </div>
 
@@ -335,6 +395,7 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
       <div className="border-t bg-card p-4">
         <div className="flex gap-2">
           <Input
+            ref={inputRef}
             value={messageInput}
             onChange={(e) => setMessageInput(e.target.value)}
             onKeyDown={(e) => {
