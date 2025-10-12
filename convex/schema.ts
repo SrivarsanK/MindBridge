@@ -8,6 +8,15 @@ const applicationTables = {
     userId: v.id("users"),
     role: v.union(v.literal("student"), v.literal("moderator"), v.literal("crisis_responder")),
     displayName: v.optional(v.string()),
+    // User demographic information
+    age: v.optional(v.number()),
+    gender: v.optional(v.union(
+      v.literal("male"),
+      v.literal("female"),
+      v.literal("non-binary"),
+      v.literal("prefer-not-to-say"),
+      v.literal("other")
+    )),
     timezone: v.string(),
     encryptedMoodHistory: v.string(), // Encrypted JSON blob
     // E2E Encryption Keys (Public keys only - private keys stored client-side)

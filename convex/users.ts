@@ -8,6 +8,14 @@ export const createOrUpdateProfile = mutation({
   args: {
     timezone: v.string(),
     displayName: v.optional(v.string()),
+    age: v.optional(v.number()),
+    gender: v.optional(v.union(
+      v.literal("male"),
+      v.literal("female"),
+      v.literal("non-binary"),
+      v.literal("prefer-not-to-say"),
+      v.literal("other")
+    )),
     privacySettings: v.optional(v.object({
       allowPeerMatching: v.boolean(),
       allowDreamAnalysis: v.boolean(),
@@ -37,6 +45,8 @@ export const createOrUpdateProfile = mutation({
       await ctx.db.patch(existingProfile._id, {
         timezone: args.timezone,
         displayName: args.displayName,
+        age: args.age,
+        gender: args.gender,
         privacySettings: args.privacySettings || existingProfile.privacySettings,
         lastActive: Date.now(),
       });
@@ -63,6 +73,8 @@ export const createOrUpdateProfile = mutation({
       role: "student",
       timezone: args.timezone,
       displayName: args.displayName,
+      age: args.age,
+      gender: args.gender,
       encryptedMoodHistory: JSON.stringify([]), // Empty encrypted history
       privacySettings: args.privacySettings || defaultPrivacySettings,
       consentVersion: "1.0",

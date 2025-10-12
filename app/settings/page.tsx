@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { 
   Shield, 
   Users, 
@@ -23,7 +25,9 @@ import {
   EyeOff,
   Trash2,
   Download,
-  Clock
+  Clock,
+  User,
+  Calendar
 } from "lucide-react"
 
 export default function SettingsPage() {
@@ -31,10 +35,16 @@ export default function SettingsPage() {
   const { t } = useLocale()
   const currentProfile = useQuery(api.users.getCurrentProfile)
   const updatePrivacy = useMutation(api.users.updatePrivacySettings)
+  const updateProfile = useMutation(api.users.createOrUpdateProfile)
   
   const [isSaving, setIsSaving] = useState(false)
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "success" | "error">("idle")
   const [errorMessage, setErrorMessage] = useState<string>("")
+
+  // Profile information state
+  const [displayName, setDisplayName] = useState("")
+  const [age, setAge] = useState("")
+  const [gender, setGender] = useState<"male" | "female" | "non-binary" | "prefer-not-to-say" | "other" | "">("")
 
   // Local state for settings
   const [allowPeerMatching, setAllowPeerMatching] = useState(false)
@@ -44,20 +54,31 @@ export default function SettingsPage() {
 
   // Initialize settings from profile
   useEffect(() => {
-    if (currentProfile?.privacySettings) {
-      setAllowPeerMatching(currentProfile.privacySettings.allowPeerMatching)
-      setAllowDreamAnalysis(currentProfile.privacySettings.allowDreamAnalysis)
-      setShareEmotionalPatterns(currentProfile.privacySettings.shareEmotionalPatterns)
-      setDataRetentionDays(currentProfile.privacySettings.dataRetentionDays)
+    if (currentProfile) {
+      setDisplayName(currentProfile.displayName || "")
+      setAge(currentProfile.age ? String(currentProfile.age) : "")
+      setGender(currentProfile.gender || "")
+      
+      if (currentProfile.privacySettings) {
+        setAllowPeerMatching(currentProfile.privacySettings.allowPeerMatching)
+        setAllowDreamAnalysis(currentProfile.privacySettings.allowDreamAnalysis)
+        setShareEmotionalPatterns(currentProfile.privacySettings.shareEmotionalPatterns)
+        setDataRetentionDays(currentProfile.privacySettings.dataRetentionDays)
+      }
     }
   }, [currentProfile])
 
   // Check if settings have changed
-  const hasChanges = currentProfile?.privacySettings && (
-    allowPeerMatching !== currentProfile.privacySettings.allowPeerMatching ||
-    allowDreamAnalysis !== currentProfile.privacySettings.allowDreamAnalysis ||
-    shareEmotionalPatterns !== currentProfile.privacySettings.shareEmotionalPatterns ||
-    dataRetentionDays !== currentProfile.privacySettings.dataRetentionDays
+  const hasChanges = currentProfile && (
+    displayName !== (currentProfile.displayName || "") ||
+    age !== (currentProfile.age ? String(currentProfile.age) : "") ||
+    gender !== (currentProfile.gender || "") ||
+    (currentProfile.privacySettings && (
+      allowPeerMatching !== currentProfile.privacySettings.allowPeerMatching ||
+      allowDreamAnalysis !== currentProfile.privacySettings.allowDreamAnalysis ||
+      shareEmotionalPatterns !== currentProfile.privacySettings.shareEmotionalPatterns ||
+      dataRetentionDays !== currentProfile.privacySettings.dataRetentionDays
+    ))
   )
 
   const handleSaveSettings = async () => {
@@ -66,7 +87,12 @@ export default function SettingsPage() {
     setErrorMessage("")
 
     try {
-      await updatePrivacy({
+      // Update profile information
+      await updateProfile({
+        displayName: displayName || undefined,
+        age: age ? parseInt(age) : undefined,
+        gender: gender || undefined,
+        timezone: currentProfile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
         privacySettings: {
           allowPeerMatching,
           allowDreamAnalysis,
@@ -188,6 +214,87 @@ export default function SettingsPage() {
                 <p className="text-xs text-muted-foreground mb-1">{t("timezone")}</p>
                 <p className="text-sm font-medium">{currentProfile.timezone}</p>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Profile Information */}
+        <Card className="mb-6 animate-in fade-in slide-in-from-left-4 duration-700 delay-150">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5 text-primary" />
+              Profile Information
+            </CardTitle>
+            <CardDescription>Update your personal details (optional)</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Display Name */}
+            <div className="space-y-2">
+              <Label htmlFor="displayName" className="text-sm font-medium">
+                Display Name
+              </Label>
+              <Input 
+                id="displayName"
+                value={displayName} 
+                onChange={(e) => setDisplayName(e.target.value)} 
+                placeholder="Your display name"
+                className="h-11"
+              />
+              <p className="text-xs text-muted-foreground">
+                This is how you'll appear to others in peer chats
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Age Input */}
+              <div className="space-y-2">
+                <Label htmlFor="age" className="text-sm font-medium flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Age
+                </Label>
+                <Input 
+                  id="age"
+                  type="number"
+                  min="13"
+                  max="120"
+                  value={age} 
+                  onChange={(e) => setAge(e.target.value)} 
+                  placeholder="Your age"
+                  className="h-11"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Helps provide age-appropriate support
+                </p>
+              </div>
+
+              {/* Gender Select */}
+              <div className="space-y-2">
+                <Label htmlFor="gender" className="text-sm font-medium flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Gender
+                </Label>
+                <Select value={gender} onValueChange={(value: any) => setGender(value)}>
+                  <SelectTrigger className="h-11">
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="non-binary">Non-binary</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  We respect all gender identities
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium text-primary">🔒 Privacy:</span> Your personal information is stored securely and used only to improve your experience.
+              </p>
             </div>
           </CardContent>
         </Card>
