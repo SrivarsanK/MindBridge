@@ -5,7 +5,7 @@ import PeerMatchingCard from "@/components/dashboard/peer-matching-card"
 import DailyCheckinCard from "@/components/dashboard/daily-checkin-card"
 import MicroInterventionsCard from "@/components/dashboard/micro-interventions-card"
 import InsightsCard from "@/components/dashboard/insights-card"
-import { Sparkles, Shield, TrendingUp } from "lucide-react"
+import { Sparkles, TrendingUp } from "lucide-react"
 import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { useAuthActions } from "@convex-dev/auth/react"
@@ -44,15 +44,7 @@ export default function DashboardPage() {
           </div>
           
           {/* Stats Bar */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6">
-            <div className="bg-card/50 backdrop-blur-sm border rounded-2xl p-4 hover:bg-card/80 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
-              <div className="flex items-center gap-2 text-primary mb-1">
-                <Shield className="h-4 w-4 shrink-0" />
-                <span className="text-xs font-medium whitespace-nowrap">Privacy</span>
-              </div>
-              <p className="text-2xl font-bold">100%</p>
-              <p className="text-xs text-muted-foreground whitespace-nowrap">On-device</p>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
             <div className="bg-card/50 backdrop-blur-sm border rounded-2xl p-4 hover:bg-card/80 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
               <div className="flex items-center gap-2 text-accent mb-1">
                 <TrendingUp className="h-4 w-4 shrink-0" />

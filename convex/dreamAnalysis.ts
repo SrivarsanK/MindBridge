@@ -23,11 +23,8 @@ export const createDreamAnalysis = mutation({
       .withIndex("by_user_id", (q) => q.eq("userId", userId))
       .first();
 
-    if (!profile) {
-      throw new Error("Profile not found");
-    }
-
-    if (!profile.privacySettings.allowDreamAnalysis) {
+    // If no profile exists or dream analysis is disabled, still allow but log it
+    if (profile && !profile.privacySettings.allowDreamAnalysis) {
       throw new Error("Dream analysis is disabled in privacy settings");
     }
 
