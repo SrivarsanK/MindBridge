@@ -174,13 +174,35 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
     }
   }, [matchDetails])
 
+  // Auto-send queued messages when encryption becomes ready
+  useEffect(() => {
+    if (encryptionKey && optimisticMessages.length > 0) {
+      console.log(`📤 Encryption ready! Sending ${optimisticMessages.length} queued messages...`)
+      
+      // Send all queued optimistic messages
+      optimisticMessages.forEach(async (msg) => {
+        try {
+          const { ciphertext, iv } = await encryptMessage(encryptionKey, msg.plaintext)
+          await sendMessage({
+            matchId,
+            encryptedContent: ciphertext,
+            iv,
+          })
+          console.log(`✅ Queued message sent: "${msg.plaintext.substring(0, 20)}..."`)
+        } catch (error) {
+          console.error("Failed to send queued message:", error)
+        }
+      })
+    }
+  }, [encryptionKey, optimisticMessages, matchId, sendMessage])
+
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [decryptedMessages])
+  }, [decryptedMessages, optimisticMessages])
 
   const handleSendMessage = async () => {
-    if (!messageInput.trim() || !encryptionKey || isEncrypting) return
+    if (!messageInput.trim() || isEncrypting) return
 
     const messageText = messageInput.trim()
     const tempTimestamp = Date.now()
@@ -198,6 +220,14 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
     
     // Focus back on input for quick typing
     setTimeout(() => inputRef.current?.focus(), 0)
+
+    // If encryption is not ready yet, queue the message
+    if (!encryptionKey) {
+      console.log("⏳ Message queued - waiting for encryption key")
+      // The message will stay in optimisticMessages until encryption is ready
+      // In a production app, you'd implement a proper queue system
+      return
+    }
 
     setIsEncrypting(true)
     try {
@@ -254,17 +284,9 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
     )
   }
 
-  if (!encryptionKey) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen gap-4">
-        <AlertTriangle className="h-12 w-12 text-orange-500" />
-        <p className="text-lg font-medium">Waiting for peer connection...</p>
-        <p className="text-sm text-muted-foreground">
-          Your peer needs to join the chat to enable encryption
-        </p>
-      </div>
-    )
-  }
+  // Continue to show chat even without encryption key (like WhatsApp)
+  // Messages will be queued until encryption is ready
+  const isEncryptionReady = !!encryptionKey
 
   return (
     <div className="flex flex-col h-screen max-w-4xl mx-auto">
@@ -324,10 +346,13 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
         <div className="mt-3 flex items-start gap-2 text-xs text-muted-foreground bg-green-500/10 border border-green-500/20 rounded-lg p-2">
           <Shield className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="font-medium text-green-700 dark:text-green-400">Secure Connection</p>
+            <p className="font-medium text-green-700 dark:text-green-400">
+              {isEncryptionReady ? "Secure Connection" : "Setting up encryption..."}
+            </p>
             <p>
-              Messages are encrypted on your device and can only be read by you and your peer.
-              Even the server cannot decrypt your messages.
+              {isEncryptionReady
+                ? "Messages are encrypted on your device and can only be read by you and your peer. Even the server cannot decrypt your messages."
+                : "Establishing secure encryption. You can start typing - messages will be sent when encryption is ready."}
             </p>
           </div>
         </div>
@@ -393,6 +418,12 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
 
       {/* Input */}
       <div className="border-t bg-card p-4">
+        {!isEncryptionReady && (
+          <div className="mb-2 flex items-center gap-2 text-xs text-orange-600 dark:text-orange-400">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            <span>Setting up encryption - messages will send automatically when ready</span>
+          </div>
+        )}
         <div className="flex gap-2">
           <Input
             ref={inputRef}
@@ -404,7 +435,7 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
                 handleSendMessage()
               }
             }}
-            placeholder="Type your message..."
+            placeholder={isEncryptionReady ? "Type your message..." : "Type message (will send when encryption ready)..."}
             disabled={isEncrypting}
             className="flex-1"
           />
@@ -412,6 +443,7 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
             onClick={handleSendMessage}
             disabled={!messageInput.trim() || isEncrypting}
             size="icon"
+            title={isEncryptionReady ? "Send message" : "Message will be queued"}
           >
             {isEncrypting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
