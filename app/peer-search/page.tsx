@@ -182,7 +182,7 @@ export default function PeerSearchPage() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col mx-auto max-w-7xl w-full px-4 sm:px-6 lg:px-8 py-8">
+      <div className="flex-1 flex flex-col mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         {/* Live Stats Banner */}
         {onlineStats && (
           <Card className="mb-6 border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5 animate-in fade-in slide-in-from-top-2 duration-500">
@@ -239,9 +239,9 @@ export default function PeerSearchPage() {
 
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Main Search Panel */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-6 min-w-0">
             {/* Mood Selection */}
-            <Card>
+            <Card className="min-w-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Heart className="h-5 w-5 text-primary" />
@@ -320,7 +320,7 @@ export default function PeerSearchPage() {
             </Card>
 
             {/* Interests Selection */}
-            <Card>
+            <Card className="min-w-0">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
@@ -414,9 +414,9 @@ export default function PeerSearchPage() {
           </div>
 
           {/* Sidebar Info */}
-          <div className="space-y-6">
+          <div className="space-y-6 min-w-0">
             {/* Active Matches */}
-            <Card>
+            <Card className="min-w-0">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <MessageCircle className="h-5 w-5 text-primary" />
@@ -461,7 +461,7 @@ export default function PeerSearchPage() {
             </Card>
 
             {/* How it Works */}
-            <Card>
+            <Card className="min-w-0">
               <CardHeader>
                 <CardTitle className="text-lg">{t("matching_tips")}</CardTitle>
               </CardHeader>
@@ -497,7 +497,7 @@ export default function PeerSearchPage() {
             </Card>
 
             {/* Safety Tips */}
-            <Card className="border-yellow-500/20 bg-yellow-500/5">
+            <Card className="border-yellow-500/20 bg-yellow-500/5 min-w-0">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Shield className="h-5 w-5 text-yellow-500" />

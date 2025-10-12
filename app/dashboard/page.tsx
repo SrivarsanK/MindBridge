@@ -51,7 +51,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-primary/5">
-      <div className="flex-1 mx-auto max-w-7xl w-full px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+      <div className="flex-1 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 md:py-12">
         {/* Hero Header */}
         <div className="mb-8 md:mb-12 animate-in fade-in slide-in-from-top-4 duration-700">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3 pl-0 lg:pl-0">
@@ -90,30 +90,30 @@ export default function DashboardPage() {
         {/* Main Grid */}
         <div className="grid gap-6 lg:grid-cols-12 mood-adaptive-grid">
           {/* Left Column - Main Content */}
-          <div className="lg:col-span-8 grid gap-6 mood-adaptive-grid">
-            <div className="animate-in fade-in slide-in-from-left-4 duration-700 delay-100">
+          <div className="lg:col-span-8 grid gap-6 mood-adaptive-grid min-w-0">
+            <div className="animate-in fade-in slide-in-from-left-4 duration-700 delay-100 min-w-0">
               <AICompanionCard />
             </div>
-            <div className="animate-in fade-in slide-in-from-left-4 duration-700 delay-200">
+            <div className="animate-in fade-in slide-in-from-left-4 duration-700 delay-200 min-w-0">
               <DreamAnalysisCard />
             </div>
           </div>
 
           {/* Right Column - Quick Actions */}
-          <div className="lg:col-span-4 grid gap-6 content-start mood-adaptive-grid">
-            <div className="animate-in fade-in slide-in-from-right-4 duration-700 delay-75">
+          <div className="lg:col-span-4 grid gap-6 content-start mood-adaptive-grid min-w-0">
+            <div className="animate-in fade-in slide-in-from-right-4 duration-700 delay-75 min-w-0">
               <MoodIndicator />
             </div>
-            <div className="animate-in fade-in slide-in-from-right-4 duration-700 delay-100">
+            <div className="animate-in fade-in slide-in-from-right-4 duration-700 delay-100 min-w-0">
               <DailyCheckinCard />
             </div>
-            <div className="animate-in fade-in slide-in-from-right-4 duration-700 delay-150">
+            <div className="animate-in fade-in slide-in-from-right-4 duration-700 delay-150 min-w-0">
               <InsightsCard />
             </div>
-            <div className="animate-in fade-in slide-in-from-right-4 duration-700 delay-200">
+            <div className="animate-in fade-in slide-in-from-right-4 duration-700 delay-200 min-w-0">
               <MicroInterventionsCard />
             </div>
-            <div className="animate-in fade-in slide-in-from-right-4 duration-700 delay-300">
+            <div className="animate-in fade-in slide-in-from-right-4 duration-700 delay-300 min-w-0">
               <PeerMatchingCard />
             </div>
           </div>
