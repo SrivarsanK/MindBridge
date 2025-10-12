@@ -10,6 +10,11 @@ const applicationTables = {
     displayName: v.optional(v.string()),
     timezone: v.string(),
     encryptedMoodHistory: v.string(), // Encrypted JSON blob
+    // E2E Encryption Keys (Public keys only - private keys stored client-side)
+    identityPublicKey: v.optional(v.string()), // base64 ECDH public key
+    signedPreKeyPublic: v.optional(v.string()), // base64 signed pre-key
+    preKeys: v.optional(v.array(v.string())), // Array of base64 one-time pre-keys
+    preKeySignature: v.optional(v.string()), // Signature of signed pre-key
     privacySettings: v.object({
       allowPeerMatching: v.boolean(),
       allowDreamAnalysis: v.boolean(),
@@ -121,7 +126,9 @@ const applicationTables = {
   peerMessages: defineTable({
     matchId: v.id("peerMatches"),
     senderId: v.id("users"),
-    encryptedContent: v.string(),
+    encryptedContent: v.string(), // AES-GCM encrypted message
+    iv: v.string(), // Initialization vector for AES-GCM
+    ephemeralPublicKey: v.optional(v.string()), // Sender's ephemeral public key (for first message)
     timestamp: v.number(),
     flaggedForModeration: v.boolean(),
     moderationReason: v.optional(v.string()),

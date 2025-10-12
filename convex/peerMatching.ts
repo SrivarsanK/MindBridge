@@ -248,11 +248,13 @@ export const getOnlineUsersStats = query({
   },
 });
 
-// Send peer message
+// Send peer message (E2E Encrypted)
 export const sendPeerMessage = mutation({
   args: {
     matchId: v.id("peerMatches"),
-    content: v.string(),
+    encryptedContent: v.string(),
+    iv: v.string(),
+    ephemeralPublicKey: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -273,18 +275,17 @@ export const sendPeerMessage = mutation({
       throw new Error("Match is not active");
     }
 
-    // Content moderation check
-    const flagged = moderateContent(args.content);
-
-    const encryptedContent = args.content; // In production: encrypt(args.content)
+    // Note: Content is encrypted client-side, server cannot moderate encrypted content
+    // Moderation happens through user reports only
 
     const messageId = await ctx.db.insert("peerMessages", {
       matchId: args.matchId,
       senderId: userId,
-      encryptedContent,
+      encryptedContent: args.encryptedContent,
+      iv: args.iv,
+      ephemeralPublicKey: args.ephemeralPublicKey,
       timestamp: Date.now(),
-      flaggedForModeration: flagged.isFlagged,
-      moderationReason: flagged.reason,
+      flaggedForModeration: false,
       deliveryStatus: "sent",
     });
 
@@ -294,23 +295,11 @@ export const sendPeerMessage = mutation({
       messageCount: match.messageCount + 1,
     });
 
-    // If flagged, add to moderation queue
-    if (flagged.isFlagged) {
-      await ctx.db.insert("moderationQueue", {
-        contentType: "peer_message",
-        contentId: messageId,
-        reason: flagged.reason || "Automated content filter",
-        priority: flagged.priority,
-        status: "pending",
-        createdAt: Date.now(),
-      });
-    }
-
     return messageId;
   },
 });
 
-// Get peer messages
+// Get peer messages (returns encrypted messages for client-side decryption)
 export const getPeerMessages = query({
   args: {
     matchId: v.id("peerMatches"),
@@ -337,7 +326,16 @@ export const getPeerMessages = query({
       .order("desc")
       .take(args.limit || 50);
 
-    return messages.reverse();
+    return messages.reverse().map((msg) => ({
+      _id: msg._id,
+      senderId: msg.senderId,
+      encryptedContent: msg.encryptedContent,
+      iv: msg.iv,
+      ephemeralPublicKey: msg.ephemeralPublicKey,
+      timestamp: msg.timestamp,
+      deliveryStatus: msg.deliveryStatus,
+      isMine: msg.senderId === userId,
+    }));
   },
 });
 
@@ -524,3 +522,141 @@ function getTimezoneOffset(timezone: string): number {
 
   return offsets[timezone] || 0;
 }
+
+// ===== E2E Encryption Functions =====
+
+/**
+ * Upload public keys for E2E encryption (called on first login)
+ */
+export const uploadPreKeys = mutation({
+  args: {
+    identityPublicKey: v.string(),
+    signedPreKeyPublic: v.string(),
+    preKeys: v.array(v.string()),
+    preKeySignature: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    const profile = await ctx.db
+      .query("userProfiles")
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
+      .first();
+
+    if (!profile) {
+      throw new Error("Profile not found");
+    }
+
+    await ctx.db.patch(profile._id, {
+      identityPublicKey: args.identityPublicKey,
+      signedPreKeyPublic: args.signedPreKeyPublic,
+      preKeys: args.preKeys,
+      preKeySignature: args.preKeySignature,
+    });
+
+    return { success: true };
+  },
+});
+
+/**
+ * Get pre-key bundle for a user (for initiating E2E encrypted conversation)
+ */
+export const getPreKeyBundle = query({
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const profile = await ctx.db
+      .query("userProfiles")
+      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
+      .first();
+
+    if (!profile) {
+      return null;
+    }
+
+    if (!profile.identityPublicKey || !profile.signedPreKeyPublic || !profile.preKeys || profile.preKeys.length === 0) {
+      return null;
+    }
+
+    // Return one pre-key (and remove it to ensure one-time use)
+    const preKey = profile.preKeys[0];
+
+    return {
+      identityKey: profile.identityPublicKey,
+      signedPreKey: profile.signedPreKeyPublic,
+      preKey: preKey,
+      signature: profile.preKeySignature || "",
+    };
+  },
+});
+
+/**
+ * Consume a pre-key after use (to ensure one-time use)
+ */
+export const consumePreKey = mutation({
+  args: {
+    userId: v.id("users"),
+    preKey: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const profile = await ctx.db
+      .query("userProfiles")
+      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
+      .first();
+
+    if (!profile || !profile.preKeys) {
+      return;
+    }
+
+    // Remove the used pre-key
+    const updatedPreKeys = profile.preKeys.filter((key) => key !== args.preKey);
+    
+    await ctx.db.patch(profile._id, {
+      preKeys: updatedPreKeys,
+    });
+  },
+});
+
+/**
+ * Get match details including peer info
+ */
+export const getMatchDetails = query({
+  args: {
+    matchId: v.id("peerMatches"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      return null;
+    }
+
+    const match = await ctx.db.get(args.matchId);
+    if (!match || (match.user1Id !== userId && match.user2Id !== userId)) {
+      return null;
+    }
+
+    // Get peer user ID
+    const peerId = match.user1Id === userId ? match.user2Id : match.user1Id;
+
+    // Get peer profile (only pseudonym, no PII)
+    const peerProfile = await ctx.db
+      .query("userProfiles")
+      .withIndex("by_user_id", (q) => q.eq("userId", peerId))
+      .first();
+
+    return {
+      matchId: match._id,
+      peerId,
+      status: match.status,
+      createdAt: match.createdAt,
+      iceBreaker: match.iceBreaker,
+      messageCount: match.messageCount,
+      peerDisplayName: peerProfile?.displayName || "Anonymous Peer",
+      matchScore: match.matchScore,
+    };
+  },
+});

@@ -28,10 +28,10 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      <div className="mx-auto max-w-7xl px-4 py-8 md:py-12">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 md:py-12">
         {/* Hero Header */}
         <div className="mb-8 md:mb-12 animate-in fade-in slide-in-from-top-4 duration-700">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3 pl-0 lg:pl-0">
             <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20 shrink-0">
               <Sparkles className="h-6 w-6 text-white" />
             </div>

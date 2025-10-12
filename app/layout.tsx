@@ -8,8 +8,12 @@ import { MoodProvider } from "@/components/mood-provider"
 import { LocaleProvider } from "@/components/locale-provider"
 import LocaleSwitcher from "@/components/locale-switcher"
 import { Suspense } from "react"
-import { ClerkProvider, SignedIn, SignedOut, UserButton, SignInButton, SignUpButton } from "@clerk/nextjs"
+import { ClerkProvider, SignedIn, SignedOut } from "@clerk/nextjs"
 import { ConvexClientProvider } from "@/components/convex-client-provider"
+import NavigationSidebar from "@/components/navigation-sidebar"
+import { BGPattern } from "@/components/ui/bg-pattern"
+import { ClerkUserButton } from "@/components/clerk-user-button"
+import { ClerkAuthButtons } from "@/components/clerk-auth-buttons"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -39,22 +43,28 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <ClerkProvider>
       <html lang="en" className={`${inter.variable} antialiased`}>
-        <body className="font-sans">
-          <ConvexClientProvider>
-            {/* Accessibility skip link */}
-            <a
-              href="#main"
-              className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-primary text-primary-foreground rounded-md px-3 py-1"
-            >
-              Skip to content
-            </a>
-            {/* Locale + mood providers for adaptive UI */}
-            <Suspense fallback={<div>Loading...</div>}>
+        <body className="font-sans relative min-h-screen" style={{ backgroundColor: 'hsl(180 15% 98%)' }}>
+          {/* Global Grid Background Pattern with Fade Edges */}
+          <div className="fixed inset-0 z-0 pointer-events-none animate-breathe">
+            <BGPattern variant="grid" mask="fade-edges" size={32} fill="rgba(99, 142, 133, 0.3)" />
+          </div>
+          
+          <div className="relative z-10">
+            <ConvexClientProvider>
+              {/* Accessibility skip link */}
+              <a
+                href="#main"
+                className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-primary text-primary-foreground rounded-md px-3 py-1"
+              >
+                Skip to content
+              </a>
+              {/* Locale + mood providers for adaptive UI */}
+              <Suspense fallback={<div>Loading...</div>}>
               <LocaleProvider defaultLocale="en-IN">
                 <MoodProvider>
                   <div className="min-h-dvh flex flex-col">
                     {/* Site header */}
-                    <header className="w-full border-b bg-background">
+                    <header className="w-full border-b bg-background/80 backdrop-blur-sm">
                       <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
                         <a
                           href="/"
@@ -73,27 +83,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                             <>
                               {/* Show user button when signed in */}
                               <SignedIn>
-                                <UserButton 
-                                  appearance={{
-                                    elements: {
-                                      avatarBox: "w-9 h-9"
-                                    }
-                                  }}
-                                  afterSignOutUrl="/"
-                                />
+                                <ClerkUserButton />
                               </SignedIn>
                               {/* Show sign in/up buttons when signed out */}
                               <SignedOut>
-                                <SignInButton mode="modal">
-                                  <button className="text-sm font-medium text-primary hover:underline transition-colors">
-                                    Sign In
-                                  </button>
-                                </SignInButton>
-                                <SignUpButton mode="modal">
-                                  <button className="bg-primary text-white rounded-full font-medium text-sm h-9 px-5 hover:bg-primary/90 transition-all shadow-sm hover:shadow-md">
-                                    Sign Up
-                                  </button>
-                                </SignUpButton>
+                                <ClerkAuthButtons />
                               </SignedOut>
                             </>
                           ) : (
@@ -110,9 +104,13 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                       </div>
                     </header>
 
-                    <main id="main" className="flex-1">
-                      {children}
-                    </main>
+                    {/* Main content with sidebar */}
+                    <div className="flex-1 flex min-h-0">
+                      <NavigationSidebar />
+                      <main id="main" className="flex-1 overflow-x-hidden overflow-y-auto">
+                        {children}
+                      </main>
+                    </div>
 
                     {/* Always-visible emergency support */}
                     <EmergencySupportBar />
@@ -122,6 +120,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </Suspense>
             <Analytics />
           </ConvexClientProvider>
+          </div>
         </body>
       </html>
     </ClerkProvider>

@@ -47,10 +47,8 @@ export default function Page() {
 
   return (
     <div className="relative overflow-hidden">
-      {/* Enhanced Gradient Background with Multiple Layers */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10 -z-10" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(var(--primary),0.15),transparent_50%)] -z-10" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,rgba(var(--accent),0.1),transparent_50%)] -z-10" />
+      {/* Additional gradient overlays for depth */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 -z-[5]" />
       
       {/* Animated Floating Shapes */}
       <div className="absolute top-20 left-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl animate-pulse -z-10" style={{ animationDuration: '4s' }} />

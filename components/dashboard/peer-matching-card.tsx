@@ -3,12 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { useState, useEffect } from "react"
-import { Users, Lock, Search, MessageCircle, X, Loader2 } from "lucide-react"
+import { Users, Lock, Search, MessageCircle, X, Loader2, Sparkles } from "lucide-react"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { Id } from "@/convex/_generated/dataModel"
+import { useRouter } from "next/navigation"
 
 export default function PeerMatchingCard() {
+  const router = useRouter()
   const [isSearching, setIsSearching] = useState(false)
   const [selectedMood, setSelectedMood] = useState("neutral")
   const [lonelinessLevel, setLonelinessLevel] = useState(5)
@@ -252,14 +254,25 @@ export default function PeerMatchingCard() {
                   Finding a match...
                 </Button>
               ) : (
-                <Button 
-                  disabled={!enabled}
-                  onClick={handleFindMatch}
-                  className="w-full h-12 rounded-2xl bg-gradient-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20 transition-all hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Search className="h-4 w-4 mr-2" />
-                  Find a match
-                </Button>
+                <>
+                  <Button 
+                    disabled={!enabled}
+                    onClick={handleFindMatch}
+                    className="w-full h-12 rounded-2xl bg-gradient-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20 transition-all hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Search className="h-4 w-4 mr-2" />
+                    Quick Match
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    disabled={!enabled}
+                    onClick={() => router.push("/peer-search")}
+                    className="w-full h-10 rounded-2xl border-primary/20 hover:bg-primary/5 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Advanced Search
+                  </Button>
+                </>
               )}
             </div>
           )}
