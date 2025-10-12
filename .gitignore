@@ -2,6 +2,12 @@
 
 # dependencies
 /node_modules
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# testing
+/coverage
 
 # next.js
 /.next/
@@ -9,15 +15,29 @@
 
 # production
 /build
+/dist
+
+# misc
+.DS_Store
+*.pem
+*.key
+*.crt
+*.p12
 
 # debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+lerna-debug.log*
 
-# env files
-.env*
+# local env files - BE VERY SPECIFIC
+.env
+.env*.local
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # vercel
 .vercel
@@ -26,5 +46,72 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-#Ignore vscode AI rules
-.github\instructions\codacy.instructions.md
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# JWT and API Keys (CRITICAL - NEVER COMMIT THESE!)
+jwt_key.pem
+*.pem
+*.key
+*_key.pem
+*_private_key.pem
+api_keys.json
+secrets.json
+credentials.json
+
+# Convex (only ignore generated files, not schema)
+convex/_generated/
+!convex/_generated/.gitkeep
+
+# Temp files
+*.tmp
+*.temp
+temp_*
+.temp/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Archives (often contain backups with sensitive data)
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# Ignore vscode AI rules (keep this if you want)
+.github/instructions/codacy.instructions.md
+
+# Backup files
+*.bak
+*.backup
+*_backup
+backup/
+
+# Database files (if any)
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache directories
+.cache/
+.parcel-cache/
+.npm/
+.eslintcache
+.stylelintcache
+
