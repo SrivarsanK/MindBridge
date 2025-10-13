@@ -8,6 +8,7 @@ const applicationTables = {
     userId: v.id("users"),
     role: v.union(v.literal("student"), v.literal("moderator"), v.literal("crisis_responder")),
     displayName: v.optional(v.string()),
+    bio: v.optional(v.string()), // Short description for peer matching
     // User demographic information
     age: v.optional(v.number()),
     gender: v.optional(v.union(

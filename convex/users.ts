@@ -8,6 +8,7 @@ export const createOrUpdateProfile = mutation({
   args: {
     timezone: v.string(),
     displayName: v.optional(v.string()),
+    bio: v.optional(v.string()),
     age: v.optional(v.number()),
     gender: v.optional(v.union(
       v.literal("male"),
@@ -24,79 +25,107 @@ export const createOrUpdateProfile = mutation({
     })),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
-
-    const existingProfile = await ctx.db
-      .query("userProfiles")
-      .withIndex("by_user_id", (q) => q.eq("userId", userId))
-      .first();
-
-    const defaultPrivacySettings = {
-      allowPeerMatching: true,
-      allowDreamAnalysis: true,
-      shareEmotionalPatterns: false,
-      dataRetentionDays: 90,
-    };
-
-    if (existingProfile) {
-      await ctx.db.patch(existingProfile._id, {
-        timezone: args.timezone,
-        displayName: args.displayName,
-        age: args.age,
-        gender: args.gender,
-        privacySettings: args.privacySettings || existingProfile.privacySettings,
-        lastActive: Date.now(),
-      });
-
-      // Audit log for privacy settings change
-      if (args.privacySettings) {
-        await ctx.db.insert("auditLogs", {
-          userId,
-          actorId: userId,
-          action: "privacy_settings_updated",
-          resourceType: "userProfile",
-          resourceId: existingProfile._id,
-          details: JSON.stringify(args.privacySettings),
-          timestamp: Date.now(),
-          severity: "info",
-        });
+    console.log('[createOrUpdateProfile] Starting profile creation/update');
+    console.log('[createOrUpdateProfile] Args:', JSON.stringify(args));
+    
+    try {
+      const userId = await getAuthUserId(ctx);
+      console.log('[createOrUpdateProfile] User ID:', userId);
+      
+      if (!userId) {
+        console.error('[createOrUpdateProfile] Not authenticated - no userId');
+        throw new Error("Not authenticated");
       }
 
-      return existingProfile._id;
+      const existingProfile = await ctx.db
+        .query("userProfiles")
+        .withIndex("by_user_id", (q) => q.eq("userId", userId))
+        .first();
+
+      console.log('[createOrUpdateProfile] Existing profile found:', !!existingProfile);
+
+      const defaultPrivacySettings = {
+        allowPeerMatching: true,
+        allowDreamAnalysis: true,
+        shareEmotionalPatterns: false,
+        dataRetentionDays: 90,
+      };
+
+      if (existingProfile) {
+        console.log('[createOrUpdateProfile] Updating existing profile:', existingProfile._id);
+        
+        await ctx.db.patch(existingProfile._id, {
+          timezone: args.timezone,
+          displayName: args.displayName,
+          bio: args.bio,
+          age: args.age,
+          gender: args.gender,
+          privacySettings: args.privacySettings || existingProfile.privacySettings,
+          lastActive: Date.now(),
+        });
+
+        // Audit log for privacy settings change
+        if (args.privacySettings) {
+          await ctx.db.insert("auditLogs", {
+            userId,
+            actorId: userId,
+            action: "privacy_settings_updated",
+            resourceType: "userProfile",
+            resourceId: existingProfile._id,
+            details: JSON.stringify(args.privacySettings),
+            timestamp: Date.now(),
+            severity: "info",
+          });
+        }
+
+        console.log('[createOrUpdateProfile] Profile updated successfully');
+        return existingProfile._id;
+      }
+
+      console.log('[createOrUpdateProfile] Creating new profile for user:', userId);
+      
+      const profileData = {
+        userId,
+        role: "student" as const,
+        timezone: args.timezone,
+        displayName: args.displayName,
+        bio: args.bio,
+        age: args.age,
+        gender: args.gender,
+        encryptedMoodHistory: JSON.stringify([]), // Empty encrypted history
+        privacySettings: args.privacySettings || defaultPrivacySettings,
+        consentVersion: "1.0",
+        consentTimestamp: Date.now(),
+        lastActive: Date.now(),
+        isAnonymous: false,
+        accountStatus: "active" as const,
+      };
+      
+      console.log('[createOrUpdateProfile] Profile data to insert:', JSON.stringify(profileData));
+
+      const profileId = await ctx.db.insert("userProfiles", profileData);
+      
+      console.log('[createOrUpdateProfile] Profile created with ID:', profileId);
+
+      // Audit log for profile creation
+      await ctx.db.insert("auditLogs", {
+        userId,
+        actorId: userId,
+        action: "profile_created",
+        resourceType: "userProfile",
+        resourceId: profileId,
+        details: "User profile created",
+        timestamp: Date.now(),
+        severity: "info",
+      });
+
+      console.log('[createOrUpdateProfile] Audit log created, returning profile ID');
+      return profileId;
+    } catch (error) {
+      console.error('[createOrUpdateProfile] ERROR:', error);
+      console.error('[createOrUpdateProfile] Error details:', JSON.stringify(error, null, 2));
+      throw error;
     }
-
-    const profileId = await ctx.db.insert("userProfiles", {
-      userId,
-      role: "student",
-      timezone: args.timezone,
-      displayName: args.displayName,
-      age: args.age,
-      gender: args.gender,
-      encryptedMoodHistory: JSON.stringify([]), // Empty encrypted history
-      privacySettings: args.privacySettings || defaultPrivacySettings,
-      consentVersion: "1.0",
-      consentTimestamp: Date.now(),
-      lastActive: Date.now(),
-      isAnonymous: false,
-      accountStatus: "active",
-    });
-
-    // Audit log for profile creation
-    await ctx.db.insert("auditLogs", {
-      userId,
-      actorId: userId,
-      action: "profile_created",
-      resourceType: "userProfile",
-      resourceId: profileId,
-      details: "User profile created",
-      timestamp: Date.now(),
-      severity: "info",
-    });
-
-    return profileId;
   },
 });
 

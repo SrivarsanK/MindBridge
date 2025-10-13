@@ -766,3 +766,164 @@ export const getMatchDetails = query({
     };
   },
 });
+
+// Get available peers for browsing and direct chat
+export const getAvailablePeers = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      return [];
+    }
+
+    const currentProfile = await ctx.db
+      .query("userProfiles")
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
+      .first();
+
+    if (!currentProfile) {
+      return [];
+    }
+
+    // Get all profiles that have peer matching enabled and are active
+    const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+    const allProfiles = await ctx.db
+      .query("userProfiles")
+      .withIndex("by_last_active")
+      .filter((q) => 
+        q.and(
+          q.neq(q.field("userId"), userId), // Not current user
+          q.eq(q.field("privacySettings.allowPeerMatching"), true), // Has peer matching enabled
+          q.eq(q.field("accountStatus"), "active"), // Active account
+          q.gte(q.field("lastActive"), fiveMinutesAgo) // Active in last 5 minutes
+        )
+      )
+      .take(20);
+
+    // Get existing matches for this user to exclude
+    const existingMatches = await ctx.db
+      .query("peerMatches")
+      .withIndex("by_user1", (q) => q.eq("user1Id", userId))
+      .filter((q) => 
+        q.or(
+          q.eq(q.field("status"), "active"),
+          q.eq(q.field("status"), "pending")
+        )
+      )
+      .collect();
+
+    const matchedUserIds = new Set(existingMatches.map(m => m.user2Id));
+
+    // Also check reverse matches
+    const reverseMatches = await ctx.db
+      .query("peerMatches")
+      .withIndex("by_user2", (q) => q.eq("user2Id", userId))
+      .filter((q) => 
+        q.or(
+          q.eq(q.field("status"), "active"),
+          q.eq(q.field("status"), "pending")
+        )
+      )
+      .collect();
+
+    reverseMatches.forEach(m => matchedUserIds.add(m.user1Id));
+
+    // Filter out already matched users
+    const availablePeers = allProfiles
+      .filter(profile => !matchedUserIds.has(profile.userId))
+      .map(profile => ({
+        userId: profile.userId,
+        displayName: profile.displayName || "Anonymous User",
+        bio: profile.bio || "No bio yet",
+        age: profile.age,
+        timezone: profile.timezone,
+        lastActive: profile.lastActive,
+      }));
+
+    return availablePeers;
+  },
+});
+
+// Create a direct peer match (for browsing-based matching)
+export const createDirectPeerMatch = mutation({
+  args: {
+    targetUserId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    const profile = await ctx.db
+      .query("userProfiles")
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
+      .first();
+
+    if (!profile) {
+      throw new Error("Profile not found");
+    }
+
+    if (!profile.privacySettings.allowPeerMatching) {
+      throw new Error("Peer matching is disabled in privacy settings");
+    }
+
+    // Check if match already exists
+    const existingMatch = await ctx.db
+      .query("peerMatches")
+      .withIndex("by_user1", (q) => q.eq("user1Id", userId))
+      .filter((q) => 
+        q.and(
+          q.eq(q.field("user2Id"), args.targetUserId),
+          q.or(
+            q.eq(q.field("status"), "active"),
+            q.eq(q.field("status"), "pending")
+          )
+        )
+      )
+      .first();
+
+    if (existingMatch) {
+      return { success: true, matchId: existingMatch._id, message: "Match already exists" };
+    }
+
+    // Check reverse match
+    const reverseMatch = await ctx.db
+      .query("peerMatches")
+      .withIndex("by_user2", (q) => q.eq("user2Id", userId))
+      .filter((q) => 
+        q.and(
+          q.eq(q.field("user1Id"), args.targetUserId),
+          q.or(
+            q.eq(q.field("status"), "active"),
+            q.eq(q.field("status"), "pending")
+          )
+        )
+      )
+      .first();
+
+    if (reverseMatch) {
+      return { success: true, matchId: reverseMatch._id, message: "Match already exists" };
+    }
+
+    // Create new match
+    const matchId = await ctx.db.insert("peerMatches", {
+      user1Id: userId,
+      user2Id: args.targetUserId,
+      matchScore: 80, // Default score for direct matches
+      matchCriteria: {
+        moodCompatibility: 0.8,
+        timezoneMatch: true,
+        lonelinessLevel: 5,
+        sharedInterests: ["general support"],
+      },
+      status: "active",
+      iceBreaker: "Hey! I'd like to connect with you. How are you doing today?",
+      createdAt: Date.now(),
+      lastActivityAt: Date.now(),
+      messageCount: 0,
+    });
+
+    return { success: true, matchId, message: "Match created successfully" };
+  },
+});

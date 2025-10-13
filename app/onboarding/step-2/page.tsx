@@ -3,6 +3,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -17,28 +18,47 @@ export default function Step2() {
   const [name, setName] = useState(generatePseudonym())
   const [age, setAge] = useState("")
   const [gender, setGender] = useState<"male" | "female" | "non-binary" | "prefer-not-to-say" | "other" | "">("")
+  const [bio, setBio] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   
   const createProfile = useMutation(api.users.createOrUpdateProfile)
 
   const handleContinue = async () => {
+    console.log('[Step2] handleContinue called');
+    console.log('[Step2] Form data:', { name, age, gender });
+    
     if (!name.trim()) {
+      console.error('[Step2] Validation failed: name is empty');
       alert("Please enter a display name")
       return
     }
 
     setIsSubmitting(true)
+    console.log('[Step2] Starting profile creation...');
+    
     try {
-      await createProfile({
+      const profileData = {
         displayName: name,
+        bio: bio || undefined,
         age: age ? parseInt(age) : undefined,
         gender: gender || undefined,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      })
+      };
+      
+      console.log('[Step2] Calling createProfile with:', profileData);
+      const result = await createProfile(profileData);
+      console.log('[Step2] Profile created successfully:', result);
+      
+      console.log('[Step2] Navigating to step 3...');
       router.push("/onboarding/step-3")
     } catch (error) {
-      console.error("Failed to save profile:", error)
-      alert("Failed to save profile. Please try again.")
+      console.error("[Step2] Failed to save profile:", error)
+      console.error("[Step2] Error type:", typeof error)
+      console.error("[Step2] Error details:", JSON.stringify(error, null, 2))
+      
+      // Show a more detailed error message
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      alert(`Failed to save profile: ${errorMessage}. Please try again.`)
       setIsSubmitting(false)
     }
   }
@@ -148,6 +168,33 @@ export default function Step2() {
                   <p className="text-xs text-muted-foreground">
                     We respect all gender identities
                   </p>
+                </div>
+
+                {/* Bio */}
+                <div className="space-y-2">
+                  <Label htmlFor="bio" className="text-sm font-medium">
+                    Short Bio (Optional)
+                  </Label>
+                  <Textarea 
+                    id="bio"
+                    value={bio} 
+                    onChange={(e) => {
+                      if (e.target.value.length <= 200) {
+                        setBio(e.target.value)
+                      }
+                    }} 
+                    placeholder="Tell others a bit about yourself..."
+                    className="min-h-[80px] resize-none"
+                    maxLength={200}
+                  />
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground">
+                      This will help others connect with you during peer matching
+                    </p>
+                    <span className="text-xs text-muted-foreground">
+                      {bio.length}/200
+                    </span>
+                  </div>
                 </div>
 
                 <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">

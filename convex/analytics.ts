@@ -7,6 +7,7 @@ export const recordDailyCheckin = mutation({
   args: {
     mood: v.union(v.literal("neutral"), v.literal("anxious"), v.literal("low"), v.literal("lonely")),
     notes: v.optional(v.string()),
+    timezone: v.optional(v.string()), // User's timezone
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -14,7 +15,20 @@ export const recordDailyCheckin = mutation({
       throw new Error("Not authenticated");
     }
 
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    console.log('[recordDailyCheckin] User:', userId, 'Mood:', args.mood);
+
+    // Get user's timezone from profile or use provided timezone
+    const userProfile = await ctx.db
+      .query("userProfiles")
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
+      .first();
+
+    const timezone = args.timezone || userProfile?.timezone || "UTC";
+    console.log('[recordDailyCheckin] Timezone:', timezone);
+    
+    // Get today's date in user's timezone
+    const today = getTodayInTimezone(timezone);
+    console.log('[recordDailyCheckin] Today date:', today);
     
     // Check if user already checked in today
     const existingCheckin = await ctx.db
@@ -24,6 +38,8 @@ export const recordDailyCheckin = mutation({
       )
       .first();
 
+    console.log('[recordDailyCheckin] Existing check-in:', existingCheckin ? 'Found' : 'Not found');
+
     if (existingCheckin) {
       // Update existing check-in
       await ctx.db.patch(existingCheckin._id, {
@@ -31,7 +47,8 @@ export const recordDailyCheckin = mutation({
         timestamp: Date.now(),
         notes: args.notes,
       });
-      return existingCheckin._id;
+      console.log('[recordDailyCheckin] Updated existing check-in:', existingCheckin._id);
+      return { checkinId: existingCheckin._id, isNewCheckin: false };
     }
 
     // Create new check-in
@@ -43,21 +60,165 @@ export const recordDailyCheckin = mutation({
       notes: args.notes,
     });
 
+    console.log('[recordDailyCheckin] Created new check-in:', checkinId);
+
     // Generate insights after check-in
     await generateInsightsHelper(ctx, userId);
 
-    return checkinId;
+    // Check for streak milestones
+    await checkStreakMilestones(ctx, userId);
+
+    return { checkinId, isNewCheckin: true };
   },
 });
 
+// Helper function to get today's date in a specific timezone
+function getTodayInTimezone(timezone: string): string {
+  try {
+    const now = new Date();
+    const dateString = now.toLocaleDateString('en-CA', { 
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }); // en-CA format is YYYY-MM-DD
+    return dateString;
+  } catch {
+    // Fallback to UTC if timezone is invalid
+    return new Date().toISOString().split('T')[0];
+  }
+}
+
+// Helper function to check and create streak milestone insights
+async function checkStreakMilestones(ctx: any, userId: any) {
+  const checkins = await ctx.db
+    .query("dailyCheckins")
+    .withIndex("by_user_id", (q: any) => q.eq("userId", userId))
+    .collect();
+
+  if (checkins.length === 0) return;
+
+  // Calculate current streak
+  const sortedCheckins = checkins.sort((a: any, b: any) => 
+    new Date(b.checkinDate).getTime() - new Date(a.checkinDate).getTime()
+  );
+
+  let currentStreak = 0;
+  let checkDate = new Date();
+  
+  for (let i = 0; i < sortedCheckins.length; i++) {
+    const checkinDate = sortedCheckins[i].checkinDate;
+    const expectedDate = checkDate.toISOString().split('T')[0];
+    
+    if (checkinDate === expectedDate) {
+      currentStreak++;
+      checkDate.setDate(checkDate.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+
+  // Milestone thresholds
+  const milestones = [3, 7, 14, 30, 60, 90, 180, 365];
+  
+  if (milestones.includes(currentStreak)) {
+    // Check if milestone insight already exists
+    const existingMilestone = await ctx.db
+      .query("userInsights")
+      .withIndex("by_user_and_type", (q: any) => 
+        q.eq("userId", userId).eq("insightType", "progress_milestone")
+      )
+      .filter((q: any) => {
+        const metadata = JSON.parse(q.field("metadata") || "{}");
+        return metadata.streakValue === currentStreak;
+      })
+      .first();
+
+    if (!existingMilestone) {
+      const milestoneMessages: Record<number, { title: string; description: string; emoji: string }> = {
+        3: {
+          title: "🔥 3-Day Streak!",
+          description: "You're building a habit! Three days in a row shows commitment. Keep it up!",
+          emoji: "🔥"
+        },
+        7: {
+          title: "⭐ One Week Streak!",
+          description: "Amazing! You've maintained your check-in habit for a full week. You're doing great!",
+          emoji: "⭐"
+        },
+        14: {
+          title: "💫 Two Week Champion!",
+          description: "Two weeks of consistent check-ins! Your dedication is truly inspiring.",
+          emoji: "💫"
+        },
+        30: {
+          title: "🏆 30-Day Milestone!",
+          description: "Incredible! A full month of daily check-ins. You've built a powerful self-care routine!",
+          emoji: "🏆"
+        },
+        60: {
+          title: "🌟 60-Day Legend!",
+          description: "Two months of unwavering commitment! Your mental health journey is remarkable.",
+          emoji: "🌟"
+        },
+        90: {
+          title: "👑 90-Day Champion!",
+          description: "Three months strong! You're a true champion of self-care and consistency.",
+          emoji: "👑"
+        },
+        180: {
+          title: "💎 Half-Year Hero!",
+          description: "Six months of dedication! Your commitment to mental wellness is extraordinary.",
+          emoji: "💎"
+        },
+        365: {
+          title: "🎉 ONE YEAR STREAK!",
+          description: "A full year! You're a mental health warrior. This is a truly remarkable achievement!",
+          emoji: "🎉"
+        }
+      };
+
+      const milestone = milestoneMessages[currentStreak];
+      if (milestone) {
+        await ctx.db.insert("userInsights", {
+          userId: userId,
+          insightType: "progress_milestone",
+          title: milestone.title,
+          description: milestone.description,
+          metadata: JSON.stringify({ 
+            streakValue: currentStreak,
+            achievedAt: Date.now(),
+            emoji: milestone.emoji
+          }),
+          generatedAt: Date.now(),
+          dismissed: false,
+        });
+      }
+    }
+  }
+}
+
 // Get current streak
 export const getStreak = query({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    timezone: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) {
-      return { currentStreak: 0, longestStreak: 0, hasCheckedInToday: false };
+      return { currentStreak: 0, longestStreak: 0, hasCheckedInToday: false, totalCheckins: 0 };
     }
+
+    // Get user's timezone
+    const userProfile = await ctx.db
+      .query("userProfiles")
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
+      .first();
+
+    const timezone = args.timezone || userProfile?.timezone || "UTC";
+    const today = getTodayInTimezone(timezone);
+
+    console.log('[getStreak] User:', userId, 'Timezone:', timezone, 'Today:', today);
 
     // Get all check-ins ordered by date
     const checkins = await ctx.db
@@ -65,8 +226,10 @@ export const getStreak = query({
       .withIndex("by_user_id", (q) => q.eq("userId", userId))
       .collect();
 
+    console.log('[getStreak] Total check-ins found:', checkins.length);
+
     if (checkins.length === 0) {
-      return { currentStreak: 0, longestStreak: 0, hasCheckedInToday: false };
+      return { currentStreak: 0, longestStreak: 0, hasCheckedInToday: false, totalCheckins: 0 };
     }
 
     // Sort by date descending
@@ -74,29 +237,51 @@ export const getStreak = query({
       new Date(b.checkinDate).getTime() - new Date(a.checkinDate).getTime()
     );
 
-    const today = new Date().toISOString().split('T')[0];
+    console.log('[getStreak] Most recent check-in date:', sortedCheckins[0].checkinDate);
+    console.log('[getStreak] All check-in dates:', sortedCheckins.map(c => c.checkinDate).join(', '));
+
     const hasCheckedInToday = sortedCheckins[0].checkinDate === today;
+    console.log('[getStreak] Has checked in today?', hasCheckedInToday);
 
     // Calculate current streak
     let currentStreak = 0;
-    let checkDate = new Date();
+    const todayDate = new Date(today);
     
-    // If not checked in today, start from yesterday
+    // Start from today if checked in, otherwise yesterday
+    let checkDate = new Date(todayDate);
     if (!hasCheckedInToday) {
       checkDate.setDate(checkDate.getDate() - 1);
     }
 
+    console.log('[getStreak] Starting streak calculation from date:', formatDateYYYYMMDD(checkDate));
+
+    // Count consecutive days
     for (let i = 0; i < sortedCheckins.length; i++) {
       const checkinDate = sortedCheckins[i].checkinDate;
-      const expectedDate = checkDate.toISOString().split('T')[0];
+      const expectedDate = formatDateYYYYMMDD(checkDate);
+      
+      console.log('[getStreak] Comparing:', checkinDate, '===', expectedDate);
       
       if (checkinDate === expectedDate) {
         currentStreak++;
+        console.log('[getStreak] Match! Current streak:', currentStreak);
         checkDate.setDate(checkDate.getDate() - 1);
       } else {
-        break;
+        // Check if we skipped a day
+        const checkinDateObj = new Date(checkinDate);
+        const daysDiff = Math.floor((checkDate.getTime() - checkinDateObj.getTime()) / (1000 * 60 * 60 * 24));
+        
+        console.log('[getStreak] No match. Days difference:', daysDiff);
+        
+        if (daysDiff > 0) {
+          // There's a gap, streak is broken
+          console.log('[getStreak] Gap detected. Breaking streak.');
+          break;
+        }
       }
     }
+
+    console.log('[getStreak] Final current streak:', currentStreak);
 
     // Calculate longest streak
     let longestStreak = 0;
@@ -116,14 +301,34 @@ export const getStreak = query({
     }
     longestStreak = Math.max(longestStreak, tempStreak);
 
+    console.log('[getStreak] Final longest streak:', longestStreak);
+
+    // Get check-in dates for the last 30 days for calendar view
+    const thirtyDaysAgo = new Date(todayDate);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const recentCheckinDates = sortedCheckins
+      .filter(c => new Date(c.checkinDate) >= thirtyDaysAgo)
+      .map(c => c.checkinDate);
+
     return { 
       currentStreak, 
       longestStreak,
       hasCheckedInToday,
       totalCheckins: checkins.length,
+      recentCheckinDates,
+      todayDate: today,
     };
   },
 });
+
+// Helper function to format date as YYYY-MM-DD
+function formatDateYYYYMMDD(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 // Get mood history for the past 30 days
 export const getMoodHistory = query({

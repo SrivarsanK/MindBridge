@@ -14,11 +14,15 @@ import NavigationSidebar from "@/components/navigation-sidebar"
 import { BGPattern } from "@/components/ui/bg-pattern"
 import { ClerkUserButton } from "@/components/clerk-user-button"
 import { ClerkAuthButtons } from "@/components/clerk-auth-buttons"
+import { ThemeProvider } from "@/components/theme-provider"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",
+  preload: true,
+  fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
 })
 
 // Check if Clerk keys are properly configured
@@ -42,15 +46,51 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
 
   return (
     <ClerkProvider>
-      <html lang="en" className={`${inter.variable} antialiased`}>
-        <body className="font-sans relative min-h-screen" style={{ backgroundColor: 'hsl(180 15% 98%)' }}>
-          {/* Global Grid Background Pattern with Fade Edges */}
-          <div className="fixed inset-0 z-0 pointer-events-none animate-breathe">
-            <BGPattern variant="grid" mask="fade-edges" size={32} fill="rgba(99, 142, 133, 0.3)" />
-          </div>
-          
-          <div className="relative z-10">
-            <ConvexClientProvider>
+      <html lang="en" className={inter.variable} suppressHydrationWarning>
+        <head>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                (function() {
+                  try {
+                    // Get theme from localStorage
+                    var theme = localStorage.getItem('mindbridge-theme') || 'system';
+                    var systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                    var effectiveTheme = theme === 'system' ? systemTheme : theme;
+                    
+                    // Apply dark class to HTML (will be transferred to body by React)
+                    if (effectiveTheme === 'dark') {
+                      document.documentElement.classList.add('dark');
+                    }
+                  } catch (e) {}
+                })();
+              `,
+            }}
+          />
+        </head>
+        <body className="font-sans antialiased">
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            storageKey="mindbridge-theme"
+            disableTransitionOnChange
+          >
+            {/* Wrapper with theme-aware styles applied instantly */}
+            <div className="relative min-h-screen bg-background text-foreground">
+              {/* Global Grid Background Pattern with Fade Edges */}
+              <div className="fixed inset-0 z-0 pointer-events-none animate-breathe dark:opacity-40">
+                <BGPattern 
+                  variant="grid" 
+                  mask="fade-edges" 
+                  size={32} 
+                  fill="currentColor" 
+                  className="text-primary/30 dark:text-primary/20"
+                />
+              </div>
+              
+              <div className="relative z-10">
+              <ConvexClientProvider>
               {/* Accessibility skip link */}
               <a
                 href="#main"
@@ -79,6 +119,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                           <nav aria-label="Locale">
                             <LocaleSwitcher />
                           </nav>
+                          <ThemeToggle />
                           {hasClerkKeys ? (
                             <>
                               {/* Show user button when signed in */}
@@ -120,7 +161,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </Suspense>
             <Analytics />
           </ConvexClientProvider>
-          </div>
+              </div>
+            </div>
+          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>

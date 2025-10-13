@@ -21,30 +21,46 @@ export default function DailyCheckinCard() {
   const { t } = useLocale()
   const moods = ["neutral", "anxious", "low", "lonely"] as const
   const recordCheckin = useMutation(api.analytics.recordDailyCheckin)
-  const streakData = useQuery(api.analytics.getStreak)
-  const [saved, setSaved] = useState(false)
+  
+  // Get user's timezone
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const streakData = useQuery(api.analytics.getStreak, { timezone })
+  
+  const [autoCheckedIn, setAutoCheckedIn] = useState(false)
+  const [showStreakCelebration, setShowStreakCelebration] = useState(false)
 
-  // Initialize saved state based on whether user checked in today
+  // Automatically record check-in when dashboard loads (if not already checked in today)
   useEffect(() => {
-    if (streakData?.hasCheckedInToday) {
-      setSaved(true)
+    const autoRecordCheckin = async () => {
+      // Only auto-checkin once per session and if not already checked in today
+      if (!autoCheckedIn && streakData && !streakData.hasCheckedInToday && recordCheckin) {
+        console.log('[DailyCheckinCard] Auto-recording daily check-in...')
+        
+        try {
+          const result = await recordCheckin({ 
+            mood: "neutral", // Default mood for automatic check-in
+            timezone 
+          })
+          
+          console.log('[DailyCheckinCard] Auto check-in successful:', result)
+          setAutoCheckedIn(true)
+          
+          // Show celebration if this is a streak
+          if (result.isNewCheckin && streakData.currentStreak >= 1) {
+            setShowStreakCelebration(true)
+            setTimeout(() => setShowStreakCelebration(false), 5000)
+          }
+        } catch (error) {
+          console.error("[DailyCheckinCard] Auto check-in failed:", error)
+        }
+      }
     }
-  }, [streakData?.hasCheckedInToday])
 
-  const handleMoodSelect = async (selectedMood: typeof moods[number]) => {
+    autoRecordCheckin()
+  }, [streakData, autoCheckedIn, recordCheckin, timezone])
+
+  const handleMoodSelect = (selectedMood: typeof moods[number]) => {
     setMood(selectedMood)
-    setSaved(false)
-  }
-
-  const handleSaveCheckin = async () => {
-    const validMoods = ["neutral", "anxious", "low", "lonely"] as const
-    if (!mood || !validMoods.includes(mood as any)) return
-    try {
-      await recordCheckin({ mood: mood as typeof validMoods[number] })
-      setSaved(true)
-    } catch (error) {
-      console.error("Failed to save check-in:", error)
-    }
   }
   
   return (
@@ -57,7 +73,9 @@ export default function DailyCheckinCard() {
             </div>
             <CardTitle className="text-lg">{t('daily_checkin')}</CardTitle>
           </div>
-          <p className="text-xs text-muted-foreground">{t('how_feeling_today')}</p>
+          <p className="text-xs text-muted-foreground">
+            You're checked in! Select your current mood (optional)
+          </p>
         </div>
       </CardHeader>
       <CardContent className="p-4">
@@ -106,26 +124,77 @@ export default function DailyCheckinCard() {
             })}
           </div>
           
-          {mood && !saved && (
-            <Button 
-              onClick={handleSaveCheckin}
-              className="w-full mt-2"
-              size="sm"
-            >
-              <Check className="h-4 w-4 mr-2" />
-              {t('save_checkin')}
-            </Button>
-          )}
-
-          {saved && (
-            <div className="flex items-center justify-center mt-2 p-3 rounded-xl bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20 shadow-sm">
+          {/* Auto Check-in Message */}
+          {streakData?.hasCheckedInToday && (
+            <div className="flex items-center justify-center mt-3 p-3 rounded-xl bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20 shadow-sm">
               <div className="flex items-center gap-2">
                 <div className="flex items-center justify-center h-6 w-6 rounded-lg bg-gradient-to-br from-green-500 to-green-600 shadow-md shrink-0">
                   <Check className="h-3.5 w-3.5 text-white" />
                 </div>
                 <p className="text-xs text-green-700 dark:text-green-400 font-medium">
-                  {t('checkin_saved')}
+                  Checked in today
                 </p>
+              </div>
+            </div>
+          )}
+
+          {/* Streak Display - Always show when we have data */}
+          {streakData && (
+            <div className="mt-2 p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-500/5 border border-orange-500/20 shadow-sm">
+              {streakData.currentStreak > 0 ? (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 shadow-lg shrink-0">
+                      <span className="text-lg">🔥</span>
+                    </div>
+                    <div>
+                      <div className="text-lg font-bold text-orange-700 dark:text-orange-400">
+                        {streakData.currentStreak} {streakData.currentStreak === 1 ? 'Day' : 'Days'}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Current Streak • Best: {streakData.longestStreak}
+                      </div>
+                    </div>
+                  </div>
+                  {!streakData.hasCheckedInToday && (
+                    <div className="text-xs text-orange-600 dark:text-orange-400 font-medium bg-orange-500/10 px-3 py-1.5 rounded-full">
+                      Check in today!
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br from-slate-400 to-slate-500 shadow-lg shrink-0">
+                    <span className="text-lg">✨</span>
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-slate-700 dark:text-slate-400">
+                      Start Your Streak!
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Check in daily to build a healthy habit
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Streak Celebration */}
+          {showStreakCelebration && streakData && (
+            <div className="mt-2 p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/20 shadow-lg animate-in fade-in zoom-in duration-500">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg shrink-0 animate-pulse">
+                  <span className="text-2xl">🎉</span>
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-purple-700 dark:text-purple-400">
+                    Amazing! {streakData.currentStreak + 1} days in a row!
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Keep up the great work! You're building a healthy habit.
+                  </div>
+                </div>
               </div>
             </div>
           )}

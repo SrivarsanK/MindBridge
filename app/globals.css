@@ -5,42 +5,80 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* 5-color palette */
-  --background: hsl(180 15% 98%); /* neutral-100 */
-  --foreground: hsl(180 20% 15%); /* neutral-900 */
-  --primary: hsl(172 32% 35%); /* sage/teal */
-  --primary-foreground: hsl(0 0% 100%); /* white */
-  --accent: hsl(35 90% 48%); /* warm notices */
-  --accent-foreground: hsl(0 0% 100%);
-  --destructive: hsl(355 80% 45%); /* crisis */
-  --destructive-foreground: hsl(0 0% 100%);
+  /* Base color definitions - never change */
+  --clr-light-bg: hsl(180 15% 98%);
+  --clr-light-fg: hsl(180 20% 15%);
+  --clr-dark-bg: hsl(180 20% 8%);
+  --clr-dark-fg: hsl(180 15% 95%);
+  
+  /* Light mode color palette */
+  --background-light: hsl(180 15% 98%);
+  --foreground-light: hsl(180 20% 15%);
+  --primary-light: hsl(172 32% 35%);
+  --primary-foreground-light: hsl(0 0% 100%);
+  --card-light: hsl(180 15% 99%);
+  --card-foreground-light: hsl(180 20% 15%);
+  --secondary-light: hsl(180 12% 95%);
+  --secondary-foreground-light: hsl(180 20% 15%);
+  --muted-light: hsl(180 12% 95%);
+  --muted-foreground-light: hsl(180 4% 35%);
+  --border-light: hsl(180 10% 90%);
+  --accent-light: hsl(35 90% 48%);
+  --accent-foreground-light: hsl(0 0% 100%);
+  --destructive-light: hsl(355 80% 45%);
+  --destructive-foreground-light: hsl(0 0% 100%);
+  
+  /* Dark mode color palette */
+  --background-dark: hsl(180 20% 8%);
+  --foreground-dark: hsl(180 15% 95%);
+  --primary-dark: hsl(172 45% 55%);
+  --primary-foreground-dark: hsl(180 20% 8%);
+  --card-dark: hsl(180 18% 12%);
+  --card-foreground-dark: hsl(180 15% 95%);
+  --secondary-dark: hsl(180 15% 18%);
+  --secondary-foreground-dark: hsl(180 15% 95%);
+  --muted-dark: hsl(180 15% 18%);
+  --muted-foreground-dark: hsl(180 10% 65%);
+  --border-dark: hsl(180 15% 22%);
+  --accent-dark: hsl(35 85% 55%);
+  --accent-foreground-dark: hsl(180 20% 8%);
+  --destructive-dark: hsl(355 75% 50%);
+  --destructive-foreground-dark: hsl(0 0% 100%);
 
-  /* derived */
-  --card: var(--background);
-  --card-foreground: var(--foreground);
-  --popover: var(--background);
-  --popover-foreground: var(--foreground);
-  --secondary: hsl(180 12% 95%);
-  --secondary-foreground: var(--foreground);
-  --muted: hsl(180 12% 95%);
-  --muted-foreground: hsl(180 4% 35%);
-  --border: hsl(180 10% 90%);
-  --input: var(--border);
+  --radius: 0.75rem;
+}
+
+/* Default to light mode on body */
+body {
+  /* Active theme variables - these change based on .dark class */
+  --background: var(--background-light);
+  --foreground: var(--foreground-light);
+  --primary: var(--primary-light);
+  --primary-foreground: var(--primary-foreground-light);
+  --card: var(--card-light);
+  --card-foreground: var(--card-foreground-light);
+  --popover: var(--card-light);
+  --popover-foreground: var(--card-foreground-light);
+  --secondary: var(--secondary-light);
+  --secondary-foreground: var(--secondary-foreground-light);
+  --muted: var(--muted-light);
+  --muted-foreground: var(--muted-foreground-light);
+  --border: var(--border-light);
+  --input: var(--border-light);
+  --accent: var(--accent-light);
+  --accent-foreground: var(--accent-foreground-light);
+  --destructive: var(--destructive-light);
+  --destructive-foreground: var(--destructive-foreground-light);
   --ring: hsl(172 32% 35% / 0.3);
-
-  /* charts use brand-friendly defaults */
+  
+  /* Charts */
   --chart-1: hsl(172 32% 35%);
   --chart-2: hsl(186 45% 35%);
   --chart-3: hsl(197 30% 35%);
   --chart-4: hsl(35 90% 48%);
   --chart-5: hsl(210 15% 35%);
-
-  --radius: 0.75rem;
-
-  /* accessibility helpers */
-  --focus-ring: var(--primary);
-
-  /* sidebar colors */
+  
+  /* Sidebar */
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -49,41 +87,54 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  
+  /* Browser native support */
+  color-scheme: light;
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+/* Dark mode - swap to dark palette when html has .dark class */
+.dark body,
+body.dark {
+  /* Active theme variables - swapped to dark values */
+  --background: var(--background-dark);
+  --foreground: var(--foreground-dark);
+  --primary: var(--primary-dark);
+  --primary-foreground: var(--primary-foreground-dark);
+  --card: var(--card-dark);
+  --card-foreground: var(--card-foreground-dark);
+  --popover: var(--card-dark);
+  --popover-foreground: var(--card-foreground-dark);
+  --secondary: var(--secondary-dark);
+  --secondary-foreground: var(--secondary-foreground-dark);
+  --muted: var(--muted-dark);
+  --muted-foreground: var(--muted-foreground-dark);
+  --border: var(--border-dark);
+  --input: var(--border-dark);
+  --accent: var(--accent-dark);
+  --accent-foreground: var(--accent-foreground-dark);
+  --destructive: var(--destructive-dark);
+  --destructive-foreground: var(--destructive-foreground-dark);
+  --ring: hsl(172 45% 55% / 0.4);
+  
+  /* Charts - adjusted for dark mode */
+  --chart-1: hsl(172 45% 55%);
+  --chart-2: hsl(186 50% 50%);
+  --chart-3: hsl(197 40% 55%);
+  --chart-4: hsl(35 85% 55%);
+  --chart-5: hsl(210 35% 55%);
+  
+  /* Sidebar - dark */
+  --sidebar: hsl(180 20% 10%);
+  --sidebar-foreground: hsl(180 15% 92%);
+  --sidebar-primary: hsl(172 45% 55%);
+  --sidebar-primary-foreground: hsl(180 20% 8%);
+  --sidebar-accent: hsl(180 15% 18%);
+  --sidebar-accent-foreground: hsl(180 15% 95%);
+  --sidebar-border: hsl(180 15% 22%);
+  --sidebar-ring: hsl(172 45% 55% / 0.4);
+  
+  /* Browser native support */
+  color-scheme: dark;
 }
 
 /* reduced motion */
@@ -159,11 +210,21 @@
   border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
+.dark .glass {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 .glass-dark {
   background: rgba(0, 0, 0, 0.3);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark .glass-dark {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .glass-card {
@@ -174,20 +235,40 @@
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
 }
 
-/* ============================================
-   MOOD-ADAPTIVE UI SYSTEM
-   "Your UI adapts gently to your state"
-   ============================================ */
-
-/* Base transition for smooth mood changes */
-body {
-  transition: background-color 800ms ease, color 800ms ease;
+.dark .glass-card {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
 }
 
-* {
-  transition-property: color, background-color, border-color, box-shadow;
-  transition-duration: 600ms;
-  transition-timing-function: ease-in-out;
+/* ============================================
+   THEME SYSTEM - INSTANT SWITCHING
+   Zero transitions, zero flash, zero conflicts
+   ============================================ */
+
+/* Force immediate theme application - NO animations or transitions */
+html,
+html *,
+html *::before,
+html *::after {
+  /* Disable ALL transitions during theme changes */
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Only enable smooth transitions for interactive elements */
+button,
+a,
+input,
+select,
+textarea,
+[role="button"] {
+  transition: transform 150ms ease, opacity 150ms ease !important;
+}
+
+/* Disable transitions on page load to prevent flash */
+.no-transitions * {
+  transition: none !important;
 }
 
 /* NEUTRAL STATE - Balanced, standard interface */

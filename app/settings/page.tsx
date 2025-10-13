@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { 
   Shield, 
@@ -45,6 +46,7 @@ export default function SettingsPage() {
   const [displayName, setDisplayName] = useState("")
   const [age, setAge] = useState("")
   const [gender, setGender] = useState<"male" | "female" | "non-binary" | "prefer-not-to-say" | "other" | "">("")
+  const [bio, setBio] = useState("")
 
   // Local state for settings
   const [allowPeerMatching, setAllowPeerMatching] = useState(false)
@@ -58,6 +60,7 @@ export default function SettingsPage() {
       setDisplayName(currentProfile.displayName || "")
       setAge(currentProfile.age ? String(currentProfile.age) : "")
       setGender(currentProfile.gender || "")
+      setBio(currentProfile.bio || "")
       
       if (currentProfile.privacySettings) {
         setAllowPeerMatching(currentProfile.privacySettings.allowPeerMatching)
@@ -73,6 +76,7 @@ export default function SettingsPage() {
     displayName !== (currentProfile.displayName || "") ||
     age !== (currentProfile.age ? String(currentProfile.age) : "") ||
     gender !== (currentProfile.gender || "") ||
+    bio !== (currentProfile.bio || "") ||
     (currentProfile.privacySettings && (
       allowPeerMatching !== currentProfile.privacySettings.allowPeerMatching ||
       allowDreamAnalysis !== currentProfile.privacySettings.allowDreamAnalysis ||
@@ -90,6 +94,7 @@ export default function SettingsPage() {
       // Update profile information
       await updateProfile({
         displayName: displayName || undefined,
+        bio: bio || undefined,
         age: age ? parseInt(age) : undefined,
         gender: gender || undefined,
         timezone: currentProfile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -243,6 +248,33 @@ export default function SettingsPage() {
               <p className="text-xs text-muted-foreground">
                 This is how you'll appear to others in peer chats
               </p>
+            </div>
+
+            {/* Bio */}
+            <div className="space-y-2">
+              <Label htmlFor="bio" className="text-sm font-medium">
+                Short Bio
+              </Label>
+              <Textarea 
+                id="bio"
+                value={bio} 
+                onChange={(e) => {
+                  if (e.target.value.length <= 200) {
+                    setBio(e.target.value)
+                  }
+                }} 
+                placeholder="Tell others a bit about yourself (optional)"
+                className="min-h-[80px] resize-none"
+                maxLength={200}
+              />
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">
+                  This will be shown to other users when they browse available peers
+                </p>
+                <span className="text-xs text-muted-foreground">
+                  {bio.length}/200
+                </span>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -434,10 +466,10 @@ export default function SettingsPage() {
             <div className="grid gap-3">
               <Button
                 variant="outline"
-                className="w-full justify-start h-auto p-4"
+                className="w-full justify-start h-auto p-4 border-primary/20 hover:bg-primary/5 hover:border-primary/30 transition-all"
                 onClick={() => alert("Data export feature coming soon!")}
               >
-                <Download className="h-5 w-5 mr-3 shrink-0" />
+                <Download className="h-5 w-5 mr-3 text-primary shrink-0" />
                 <div className="text-left flex-1">
                   <p className="text-sm font-medium">{t("export_data")}</p>
                   <p className="text-xs text-muted-foreground">{t("export_data_desc")}</p>
@@ -446,13 +478,13 @@ export default function SettingsPage() {
               
               <Button
                 variant="outline"
-                className="w-full justify-start h-auto p-4 border-red-500/20 hover:bg-red-500/5 hover:border-red-500/30"
+                className="w-full justify-start h-auto p-4 border-red-500/30 hover:bg-red-500/10 hover:border-red-500/50 transition-all"
                 onClick={() => alert("Account deletion requires confirmation. Feature coming soon!")}
               >
-                <Trash2 className="h-5 w-5 mr-3 text-red-500 shrink-0" />
+                <Trash2 className="h-5 w-5 mr-3 text-red-500 dark:text-red-400 shrink-0" />
                 <div className="text-left flex-1">
                   <p className="text-sm font-medium text-red-600 dark:text-red-400">{t("delete_data")}</p>
-                  <p className="text-xs text-muted-foreground">{t("delete_data_desc")}</p>
+                  <p className="text-xs text-red-700 dark:text-red-300">{t("delete_data_desc")}</p>
                 </div>
               </Button>
             </div>

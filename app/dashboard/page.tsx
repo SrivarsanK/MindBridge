@@ -19,7 +19,10 @@ export default function DashboardPage() {
   const { mood } = useMood()
   const { t } = useLocale()
   const currentUser = useQuery(api.auth.loggedInUser)
-  const streakData = useQuery(api.analytics.getStreak)
+  
+  // Get user's timezone
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const streakData = useQuery(api.analytics.getStreak, { timezone })
   const insightsCount = useQuery(api.analytics.getInsightsCount)
 
   // Auto sign-in anonymous users

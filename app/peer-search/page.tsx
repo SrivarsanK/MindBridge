@@ -28,7 +28,8 @@ import {
   Zap,
   Meh,
   Smile,
-  HelpCircle
+  HelpCircle,
+  UserCircle2
 } from "lucide-react"
 
 const MOOD_OPTIONS = [
@@ -58,10 +59,13 @@ export default function PeerSearchPage() {
   const [isSearching, setIsSearching] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [encryptionInitialized, setEncryptionInitialized] = useState(false)
+  const [connectingUserId, setConnectingUserId] = useState<string | null>(null)
 
   const requestPeerMatch = useMutation(api.peerMatching.requestPeerMatch)
   const uploadPreKeys = useMutation(api.peerMatching.uploadPreKeys)
+  const createDirectMatch = useMutation(api.peerMatching.createDirectPeerMatch)
   const activeMatches = useQuery(api.peerMatching.getActiveMatches)
+  const availablePeers = useQuery(api.peerMatching.getAvailablePeers)
   const currentUser = useQuery(api.auth.loggedInUser)
   const onlineStats = useQuery(api.peerMatching.getOnlineUsersStats)
 
@@ -130,6 +134,32 @@ export default function PeerSearchPage() {
         ? prev.filter(i => i !== interest)
         : [...prev, interest]
     )
+  }
+
+  // Handle direct peer chat
+  const handleDirectChat = async (targetUserId: any) => {
+    try {
+      setConnectingUserId(targetUserId)
+      const result = await createDirectMatch({ targetUserId })
+      
+      if (result.success && result.matchId) {
+        // Navigate to chat
+        router.push(`/peer-chat/${result.matchId}`)
+      }
+    } catch (error) {
+      console.error("Failed to create direct match:", error)
+      alert(t("failed_peer_match") || "Failed to connect")
+    } finally {
+      setConnectingUserId(null)
+    }
+  }
+
+  // Format time ago
+  const formatTimeAgo = (timestamp: number) => {
+    const seconds = Math.floor((Date.now() - timestamp) / 1000)
+    if (seconds < 60) return t("just_now") || "Just now"
+    if (seconds < 300) return t("few_minutes_ago") || "Few minutes ago"
+    return t("recently_active") || "Recently active"
   }
 
   const handleSearch = async () => {
@@ -317,6 +347,113 @@ export default function PeerSearchPage() {
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Main Search Panel */}
           <div className="lg:col-span-2 space-y-6 min-w-0">
+            {/* Browse Available Peers */}
+            {availablePeers && availablePeers.length > 0 && (
+              <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Users className="h-5 w-5 text-primary" />
+                        {t("available_peers_title") || "Available Peers"}
+                      </CardTitle>
+                      <CardDescription>
+                        {t("available_peers_desc") || "Connect directly with available peers"}
+                      </CardDescription>
+                    </div>
+                    <Badge variant="secondary">
+                      {availablePeers.length} {t("online_text") || "online"}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {availablePeers.map((peer: any) => (
+                      <div
+                        key={peer.userId}
+                        className="p-4 rounded-xl border-2 border-border bg-card hover:border-primary/50 hover:shadow-md transition-all"
+                      >
+                        {/* Peer Avatar & Name */}
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center shrink-0 border-2 border-primary/10">
+                            <span className="text-lg font-bold text-primary">
+                              {peer.displayName ? peer.displayName[0].toUpperCase() : "A"}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-semibold text-sm truncate">
+                                {peer.displayName || "Anonymous User"}
+                              </h3>
+                              <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse shrink-0"></div>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              {peer.age && (
+                                <span>{peer.age} {t("years_old") || "years"}</span>
+                              )}
+                              <Clock className="h-3 w-3" />
+                              <span>{formatTimeAgo(peer.lastActive)}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Bio */}
+                        <div className="mb-3 p-3 rounded-lg bg-muted/50 min-h-[60px]">
+                          <p className="text-xs text-muted-foreground italic line-clamp-3">
+                            {peer.bio && peer.bio !== "No bio yet" 
+                              ? `"${peer.bio}"`
+                              : t("no_bio_text") || "No bio yet"}
+                          </p>
+                        </div>
+
+                        {/* Timezone */}
+                        {peer.timezone && (
+                          <div className="flex items-center gap-1 mb-3 text-xs text-muted-foreground">
+                            <MapPin className="h-3 w-3" />
+                            <span>{peer.timezone.replace(/_/g, ' ')}</span>
+                          </div>
+                        )}
+
+                        {/* Chat Button */}
+                        <Button
+                          onClick={() => handleDirectChat(peer.userId)}
+                          disabled={connectingUserId === peer.userId}
+                          className="w-full h-9 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-sm"
+                          size="sm"
+                        >
+                          {connectingUserId === peer.userId ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              {t("connecting") || "Connecting..."}
+                            </>
+                          ) : (
+                            <>
+                              <MessageCircle className="h-4 w-4 mr-2" />
+                              {t("chat_button") || "Chat"}
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Divider */}
+            {availablePeers && availablePeers.length > 0 && (
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border"></div>
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-4 text-muted-foreground">
+                    {t("or_algorithm_match") || "Or use algorithm matching"}
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* Mood Selection */}
             <Card className="min-w-0">
               <CardHeader>
