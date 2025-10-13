@@ -13,18 +13,20 @@ export default function InsightsCard() {
 
   if (!insights || insights.length === 0) {
     return (
-      <Card className="overflow-hidden border-primary/10 shadow-md hover:shadow-lg transition-all duration-300">
-        <CardHeader className="bg-gradient-to-br from-primary/5 to-transparent border-b">
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-600 shadow-lg shadow-yellow-500/20">
-                <Lightbulb className="h-5 w-5 text-white" />
+      <Card className="overflow-hidden border-primary/10 shadow-md hover:shadow-lg transition-all duration-300 !py-0 !gap-0 card-fixed-layout">
+        <div className="bg-gradient-to-br from-primary/5 to-transparent border-b">
+          <CardHeader className="py-4">
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-600 shadow-lg shadow-yellow-500/20">
+                  <Lightbulb className="h-5 w-5 text-white" />
+                </div>
+                <CardTitle className="text-lg">{t("insights_card")}</CardTitle>
               </div>
-              <CardTitle className="text-lg">{t("insights_card")}</CardTitle>
+              <p className="text-xs text-muted-foreground">{t("insights_desc")}</p>
             </div>
-            <p className="text-xs text-muted-foreground">{t("insights_desc")}</p>
-          </div>
-        </CardHeader>
+          </CardHeader>
+        </div>
         <CardContent className="p-4">
           <div className="text-center py-8">
             <Sparkles className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
@@ -49,18 +51,20 @@ export default function InsightsCard() {
   }
 
   return (
-    <Card className="overflow-hidden border-primary/10 shadow-md hover:shadow-lg transition-all duration-300">
-      <CardHeader className="bg-gradient-to-br from-primary/5 to-transparent border-b">
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-600 shadow-lg shadow-yellow-500/20">
-              <Lightbulb className="h-5 w-5 text-white" />
+    <Card className="overflow-hidden border-primary/10 shadow-md hover:shadow-lg transition-all duration-300 !py-0 !gap-0">
+      <div className="bg-gradient-to-br from-primary/5 to-transparent border-b">
+        <CardHeader className="py-4">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-600 shadow-lg shadow-yellow-500/20">
+                <Lightbulb className="h-5 w-5 text-white" />
+              </div>
+              <CardTitle className="text-lg">{t("insights_card")}</CardTitle>
             </div>
-            <CardTitle className="text-lg">{t("insights_card")}</CardTitle>
+            <p className="text-xs text-muted-foreground">{t("insights_desc")}</p>
           </div>
-          <p className="text-xs text-muted-foreground">{t("insights_desc")}</p>
-        </div>
-      </CardHeader>
+        </CardHeader>
+      </div>
       <CardContent className="p-4">
         <div className="flex flex-col gap-3">
           {insights.slice(0, 3).map((insight) => {

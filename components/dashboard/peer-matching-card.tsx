@@ -135,9 +135,9 @@ export default function PeerMatchingCard() {
   }
   
   return (
-    <Card className="overflow-hidden border-primary/10 shadow-md hover:shadow-lg transition-all duration-300">
-      <CardHeader className="bg-gradient-to-br from-primary/5 to-transparent border-b">
-        <div className="flex flex-col gap-3">
+      <Card className="overflow-hidden border-primary/10 shadow-md hover:shadow-lg transition-all duration-300 !py-0 !gap-0 card-fixed-layout">
+      <div className="bg-gradient-to-br from-primary/5 to-transparent border-b">
+        <CardHeader className="py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg shadow-purple-500/20">
@@ -165,9 +165,9 @@ export default function PeerMatchingCard() {
               </div>
             )}
           </div>
-          <p className="text-xs text-muted-foreground">{t("peer_subtitle")}</p>
-        </div>
-      </CardHeader>
+          <p className="text-xs text-muted-foreground mt-2">{t("peer_subtitle")}</p>
+        </CardHeader>
+      </div>
       <CardContent className="p-4">
         <div className="flex flex-col gap-4">
           {/* Toggle Section */}
@@ -266,7 +266,7 @@ export default function PeerMatchingCard() {
                   disabled
                   className="w-full h-12 rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-white flex items-center justify-center gap-2"
                 >
-                  <Search className="h-4 w-4 animate-pulse text-primary-foreground" />
+                  <Search className="h-4 w-4 animate-pulse text-white" />
                   <span>{t("searching_peer")}</span>
                 </Button>
               ) : (
@@ -276,7 +276,7 @@ export default function PeerMatchingCard() {
                     onClick={handleFindMatch}
                     className="w-full h-12 rounded-2xl bg-gradient-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20 transition-all hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-white flex items-center justify-center gap-2"
                   >
-                    <Search className="h-4 w-4 text-primary-foreground" />
+                    <Search className="h-4 w-4 text-white" />
                     <span>{t("find_peer")}</span>
                   </Button>
                   <Button 

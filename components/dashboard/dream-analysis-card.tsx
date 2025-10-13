@@ -124,24 +124,26 @@ export default function DreamAnalysisCard() {
   }
   
   return (
-    <Card className="overflow-hidden border-primary/10 shadow-lg hover:shadow-xl transition-all duration-300">
-      <CardHeader className="bg-gradient-to-br from-primary/5 to-transparent border-b">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center h-11 w-11 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 shadow-lg shadow-indigo-500/20 shrink-0">
-              <Moon className="h-5 w-5 text-white" />
+    <Card className="overflow-hidden border-primary/10 shadow-md hover:shadow-lg transition-all duration-300 !py-0 !gap-0 card-fixed-layout">
+      <div className="bg-gradient-to-br from-primary/5 to-transparent border-b">
+        <CardHeader className="py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center h-11 w-11 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 shadow-lg shadow-indigo-500/20 shrink-0">
+                <Moon className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-xl">{t("dream_analysis")}</CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">{t("dream_subtitle")}</p>
+              </div>
             </div>
-            <div>
-              <CardTitle className="text-xl">{t("dream_analysis")}</CardTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">{t("dream_subtitle")}</p>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-br from-indigo-500/10 to-indigo-500/5 border border-indigo-500/20 shadow-sm">
+              <Brain className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+              <span className="text-xs font-medium text-indigo-500">AI-Powered</span>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-br from-indigo-500/10 to-indigo-500/5 border border-indigo-500/20 shadow-sm">
-            <Brain className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
-            <span className="text-xs font-medium text-indigo-500">AI-Powered</span>
-          </div>
-        </div>
-      </CardHeader>
+        </CardHeader>
+      </div>
       <CardContent className="p-6">
         <div className="grid gap-6">
           {/* Dream Entry Form */}

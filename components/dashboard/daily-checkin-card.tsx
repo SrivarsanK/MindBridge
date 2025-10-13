@@ -64,20 +64,22 @@ export default function DailyCheckinCard() {
   }
   
   return (
-    <Card className="overflow-hidden border-primary/10 shadow-md hover:shadow-lg transition-all duration-300">
-      <CardHeader className="bg-gradient-to-br from-primary/5 to-transparent border-b">
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-rose-500 to-rose-600 shadow-lg shadow-rose-500/20">
-              <Heart className="h-5 w-5 text-white" />
+      <Card className="overflow-hidden border-primary/10 shadow-md hover:shadow-lg transition-all duration-300 !py-0 !gap-0 card-fixed-layout">
+      <div className="bg-gradient-to-br from-primary/5 to-transparent border-b">
+        <CardHeader className="py-4">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-rose-500 to-rose-600 shadow-lg shadow-rose-500/20">
+                <Heart className="h-5 w-5 text-white" />
+              </div>
+              <CardTitle className="text-lg">{t('daily_checkin')}</CardTitle>
             </div>
-            <CardTitle className="text-lg">{t('daily_checkin')}</CardTitle>
+            <p className="text-xs text-muted-foreground">
+              You're checked in! Select your current mood (optional)
+            </p>
           </div>
-          <p className="text-xs text-muted-foreground">
-            You're checked in! Select your current mood (optional)
-          </p>
-        </div>
-      </CardHeader>
+        </CardHeader>
+      </div>
       <CardContent className="p-4">
         <div className="flex flex-col gap-3">
           <div className="grid grid-cols-2 gap-2">

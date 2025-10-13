@@ -303,6 +303,16 @@ const dictionaries: Record<Locale, Dict> = {
     searching: "Searching...",
     select_interests: "Select interests",
     
+    // User Profile Bio
+    your_profile: "Your Profile",
+    profile_description: "Share a bit about yourself to help others connect with you",
+    bio_label: "Bio",
+    bio_placeholder: "e.g., I enjoy reading and gaming. Looking for someone to talk about daily life and share experiences...",
+    bio_tip: "💡 Be genuine! Avoid sharing personal details like full name, address, or contact info.",
+    save_profile: "Save Profile",
+    bio_saved: "Bio saved successfully!",
+    bio_save_failed: "Failed to save bio",
+    
     // Interests
     interest_academics: "Academics",
     interest_relationships: "Relationships",

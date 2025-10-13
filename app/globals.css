@@ -202,43 +202,70 @@ body.dark {
   }
 }
 
-/* Glassmorphism utility classes */
+/* ============================================
+   CARD LAYOUT FIX
+   Ensures cards fill their container properly
+   ============================================ */
+
+/* Target actual card components using data-slot attribute */
+[data-slot="card"] {
+  /* Card already has flex flex-col in its className */
+  /* Just ensure it fills height if parent has defined height */
+  min-height: 100%;
+}
+
+/* For glass cards - full flex layout */
+div[class*="glass"]:not([class*="backdrop"]):not(button):not(aside):not(nav) {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  width: 100%;
+}
+
+/* Ensure card content can expand if needed */
+[data-slot="card-content"] {
+  flex: 1 1 auto;
+}
+
+
+/* ============================================
+   GLASSMORPHISM UTILITY CLASSES
+   Theme-aware glass effects using CSS variables
+   ============================================ */
+
+/* Base glass effect - adapts to theme automatically */
 .glass {
-  background: rgba(255, 255, 255, 0.7);
+  background: color-mix(in srgb, var(--background) 70%, transparent);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+  box-shadow: 0 4px 16px 0 color-mix(in srgb, var(--foreground) 5%, transparent);
 }
 
-.dark .glass {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.glass-dark {
-  background: rgba(0, 0, 0, 0.3);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.dark .glass-dark {
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-}
-
+/* Enhanced glass with stronger blur */
 .glass-card {
-  background: rgba(255, 255, 255, 0.6);
+  background: color-mix(in srgb, var(--card) 60%, transparent);
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+  border: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
+  box-shadow: 0 8px 32px 0 color-mix(in srgb, var(--foreground) 8%, transparent);
 }
 
-.dark .glass-card {
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+/* Subtle glass effect */
+.glass-subtle {
+  background: color-mix(in srgb, var(--background) 80%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
+}
+
+/* Strong glass effect */
+.glass-strong {
+  background: color-mix(in srgb, var(--card) 85%, transparent);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  box-shadow: 0 12px 40px 0 color-mix(in srgb, var(--foreground) 12%, transparent);
 }
 
 /* ============================================
@@ -295,13 +322,19 @@ textarea,
 }
 
 /* Apply spacious layout for anxious state */
-[data-mood="anxious"] .mood-adaptive-card {
+[data-mood="anxious"] .mood-adaptive-card:not(.card-fixed-layout) {
   padding: calc(1rem * var(--mood-spacing));
   gap: calc(0.75rem * var(--mood-spacing));
 }
 
 [data-mood="anxious"] .mood-adaptive-grid {
   gap: calc(1.5rem * var(--mood-spacing));
+}
+
+/* Prevent mood spacing from affecting cards with fixed layout */
+.card-fixed-layout {
+  padding: 0 !important;
+  gap: 0 !important;
 }
 
 /* LOW ENERGY STATE - Warmer, softer, comforting */
@@ -362,6 +395,108 @@ textarea,
 
 [data-mood="crisis"] .mood-adaptive-card {
   border-width: 2px;
+}
+
+/* ============================================
+   DARK MODE MOOD THEMES
+   Optimized color palettes for dark environments
+   ============================================ */
+
+/* DARK MODE - NEUTRAL STATE - Balanced, easy on the eyes */
+.dark [data-mood="neutral"] {
+  --primary: hsl(172 40% 55%); /* Brighter teal for dark bg */
+  --background: hsl(180 15% 10%); /* Deep neutral dark */
+  --foreground: hsl(180 10% 92%); /* Soft white */
+  --card: hsl(180 12% 14%); /* Slightly lighter than bg */
+  --card-foreground: hsl(180 10% 90%);
+  --border: hsl(180 10% 22%);
+  --muted: hsl(180 10% 18%);
+  --muted-foreground: hsl(180 8% 60%);
+  --mood-spacing: 1;
+  --mood-shadow: 0.25; /* Stronger shadows in dark mode */
+  --mood-contrast: 1;
+}
+
+/* DARK MODE - ANXIOUS STATE - Calming deep blues with reduced intensity */
+.dark [data-mood="anxious"] {
+  --primary: hsl(200 45% 60%); /* Soft, calming blue */
+  --background: hsl(200 20% 8%); /* Deep cool background */
+  --foreground: hsl(200 15% 90%);
+  --card: hsl(200 18% 12%); /* Cool dark card */
+  --card-foreground: hsl(200 12% 88%);
+  --border: hsl(200 15% 20%);
+  --muted: hsl(200 15% 15%);
+  --muted-foreground: hsl(200 12% 58%);
+  --mood-spacing: 1.15; /* More breathing room */
+  --mood-shadow: 0.18; /* Softer shadows */
+  --mood-contrast: 0.9; /* Reduced contrast for calm */
+}
+
+/* DARK MODE - LOW ENERGY STATE - Warm, gentle, comforting darkness */
+.dark [data-mood="low"] {
+  --primary: hsl(165 35% 52%); /* Muted teal */
+  --background: hsl(30 15% 9%); /* Warm dark brown-gray */
+  --foreground: hsl(35 12% 88%); /* Warm soft white */
+  --card: hsl(30 18% 13%); /* Warm dark card */
+  --card-foreground: hsl(35 10% 85%);
+  --border: hsl(30 12% 22%);
+  --muted: hsl(30 15% 16%);
+  --muted-foreground: hsl(35 10% 55%);
+  --mood-spacing: 1;
+  --mood-shadow: 0.12; /* Very soft shadows */
+  --mood-contrast: 0.85; /* Low contrast for comfort */
+}
+
+/* DARK MODE - LONELY STATE - Warm, inviting, connection-focused */
+.dark [data-mood="lonely"] {
+  --primary: hsl(25 55% 58%); /* Warm terra cotta */
+  --background: hsl(25 18% 10%); /* Warm inviting dark */
+  --foreground: hsl(25 15% 90%);
+  --card: hsl(25 20% 14%); /* Warm dark card */
+  --card-foreground: hsl(25 12% 88%);
+  --border: hsl(25 15% 24%);
+  --muted: hsl(25 18% 17%);
+  --muted-foreground: hsl(25 12% 58%);
+  --accent: hsl(35 75% 55%); /* Bright warm accent */
+  --accent-foreground: hsl(25 20% 10%);
+  --mood-spacing: 1.05;
+  --mood-shadow: 0.22;
+  --mood-contrast: 0.92;
+}
+
+/* DARK MODE - CRISIS STATE - High clarity, strong contrast, focused */
+.dark [data-mood="crisis"] {
+  --primary: hsl(172 45% 58%); /* Clear teal */
+  --background: hsl(0 0% 8%); /* Pure dark gray */
+  --foreground: hsl(0 0% 96%); /* High contrast white */
+  --card: hsl(0 0% 12%); /* Clear dark card */
+  --card-foreground: hsl(0 0% 94%);
+  --border: hsl(0 0% 28%); /* Strong borders */
+  --muted: hsl(0 0% 15%);
+  --muted-foreground: hsl(0 0% 65%);
+  --destructive: hsl(355 75% 55%); /* Visible red for alerts */
+  --destructive-foreground: hsl(0 0% 100%);
+  --mood-spacing: 1.1;
+  --mood-shadow: 0.35; /* Strong shadows for depth */
+  --mood-contrast: 1.08; /* Higher contrast */
+}
+
+/* Dark mode mood-specific enhancements */
+.dark [data-mood="lonely"] .mood-adaptive-card {
+  box-shadow: 0 0 0 1px hsl(25 55% 58% / 0.15), 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dark [data-mood="crisis"] .mood-adaptive-card {
+  border-width: 2px;
+  box-shadow: 0 0 0 1px hsl(172 45% 58% / 0.2), 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.dark [data-mood="anxious"] .mood-adaptive-card {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dark [data-mood="low"] .mood-adaptive-card {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
 /* ============================================

@@ -16,18 +16,20 @@ export default function MicroInterventionsCard() {
   ]
   
   return (
-    <Card className="overflow-hidden border-primary/10 shadow-md hover:shadow-lg transition-all duration-300">
-      <CardHeader className="bg-gradient-to-br from-primary/5 to-transparent border-b">
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 shadow-lg shadow-amber-500/20">
-              <Sparkles className="h-5 w-5 text-white" />
+    <Card className="overflow-hidden border-primary/10 shadow-md hover:shadow-lg transition-all duration-300 !py-0 !gap-0 card-fixed-layout">
+      <div className="bg-gradient-to-br from-primary/5 to-transparent border-b">
+        <CardHeader className="py-4">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 shadow-lg shadow-amber-500/20">
+                <Sparkles className="h-5 w-5 text-white" />
+              </div>
+              <CardTitle className="text-lg">{t("micro_interventions")}</CardTitle>
             </div>
-            <CardTitle className="text-lg">{t("micro_interventions")}</CardTitle>
+            <p className="text-xs text-muted-foreground">{t("micro_interventions_desc")}</p>
           </div>
-          <p className="text-xs text-muted-foreground">{t("micro_interventions_desc")}</p>
-        </div>
-      </CardHeader>
+        </CardHeader>
+      </div>
       <CardContent className="p-4">
         <div className="flex flex-col gap-2">
           {interventions.map((intervention) => {

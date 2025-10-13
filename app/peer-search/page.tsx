@@ -60,6 +60,8 @@ export default function PeerSearchPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [encryptionInitialized, setEncryptionInitialized] = useState(false)
   const [connectingUserId, setConnectingUserId] = useState<string | null>(null)
+  const [userBio, setUserBio] = useState<string>("")
+  const [isSavingBio, setIsSavingBio] = useState(false)
 
   const requestPeerMatch = useMutation(api.peerMatching.requestPeerMatch)
   const uploadPreKeys = useMutation(api.peerMatching.uploadPreKeys)
@@ -67,7 +69,9 @@ export default function PeerSearchPage() {
   const activeMatches = useQuery(api.peerMatching.getActiveMatches)
   const availablePeers = useQuery(api.peerMatching.getAvailablePeers)
   const currentUser = useQuery(api.auth.loggedInUser)
+  const currentProfile = useQuery(api.users.getCurrentProfile)
   const onlineStats = useQuery(api.peerMatching.getOnlineUsersStats)
+  const updateProfile = useMutation(api.users.createOrUpdateProfile)
 
   // Initialize encryption keys on first load
   useEffect(() => {
@@ -123,6 +127,35 @@ export default function PeerSearchPage() {
 
     initializeEncryption()
   }, [currentUser, encryptionInitialized, uploadPreKeys])
+
+  // Load user's existing bio
+  useEffect(() => {
+    if (currentProfile?.bio) {
+      setUserBio(currentProfile.bio)
+    }
+  }, [currentProfile])
+
+  // Save user bio
+  const handleSaveBio = async () => {
+    if (!currentProfile) return
+    
+    setIsSavingBio(true)
+    try {
+      await updateProfile({
+        timezone: currentProfile.timezone,
+        displayName: currentProfile.displayName,
+        bio: userBio,
+        age: currentProfile.age,
+        gender: currentProfile.gender,
+      })
+      alert(t("bio_saved") || "Bio saved successfully!")
+    } catch (error) {
+      console.error("Failed to save bio:", error)
+      alert(t("bio_save_failed") || "Failed to save bio")
+    } finally {
+      setIsSavingBio(false)
+    }
+  }
 
   const filteredInterests = INTEREST_OPTIONS.filter(interest =>
     t(interest).toLowerCase().includes(searchQuery.toLowerCase())
@@ -367,58 +400,60 @@ export default function PeerSearchPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr">
                     {availablePeers.map((peer: any) => (
                       <div
                         key={peer.userId}
-                        className="p-4 rounded-xl border-2 border-border bg-card hover:border-primary/50 hover:shadow-md transition-all"
+                        className="p-2 rounded-md border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all flex flex-col justify-between"
                       >
-                        {/* Peer Avatar & Name */}
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center shrink-0 border-2 border-primary/10">
-                            <span className="text-lg font-bold text-primary">
-                              {peer.displayName ? peer.displayName[0].toUpperCase() : "A"}
-                            </span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-semibold text-sm truncate">
-                                {peer.displayName || "Anonymous User"}
-                              </h3>
-                              <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse shrink-0"></div>
+                        <div className="space-y-1.5">
+                          {/* Peer Avatar & Name */}
+                          <div className="flex items-center gap-2">
+                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center shrink-0">
+                              <span className="text-xs font-bold text-primary">
+                                {peer.displayName ? peer.displayName[0].toUpperCase() : "A"}
+                              </span>
                             </div>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              {peer.age && (
-                                <span>{peer.age} {t("years_old") || "years"}</span>
-                              )}
-                              <Clock className="h-3 w-3" />
-                              <span>{formatTimeAgo(peer.lastActive)}</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1">
+                                <h3 className="font-medium text-xs truncate">
+                                  {peer.displayName || "Anonymous User"}
+                                </h3>
+                                <div className="h-1.5 w-1.5 rounded-full bg-green-500 shrink-0"></div>
+                              </div>
+                              <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
+                                {peer.age && (
+                                  <span>{peer.age}y</span>
+                                )}
+                                {peer.age && <span>•</span>}
+                                <span>{formatTimeAgo(peer.lastActive)}</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
 
-                        {/* Bio */}
-                        <div className="mb-3 p-3 rounded-lg bg-muted/50 min-h-[60px]">
-                          <p className="text-xs text-muted-foreground italic line-clamp-3">
-                            {peer.bio && peer.bio !== "No bio yet" 
-                              ? `"${peer.bio}"`
-                              : t("no_bio_text") || "No bio yet"}
-                          </p>
-                        </div>
+                          {/* Bio */}
+                          {peer.bio && peer.bio !== "No bio yet" ? (
+                            <div className="p-1.5 rounded bg-muted/30">
+                              <p className="text-[10px] text-muted-foreground italic line-clamp-2 leading-snug">
+                                "{peer.bio}"
+                              </p>
+                            </div>
+                          ) : null}
 
-                        {/* Timezone */}
-                        {peer.timezone && (
-                          <div className="flex items-center gap-1 mb-3 text-xs text-muted-foreground">
-                            <MapPin className="h-3 w-3" />
-                            <span>{peer.timezone.replace(/_/g, ' ')}</span>
-                          </div>
-                        )}
+                          {/* Timezone */}
+                          {peer.timezone && (
+                            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                              <MapPin className="h-2.5 w-2.5" />
+                              <span className="truncate">{peer.timezone.replace(/_/g, ' ')}</span>
+                            </div>
+                          )}
+                        </div>
 
                         {/* Chat Button */}
                         <Button
                           onClick={() => handleDirectChat(peer.userId)}
                           disabled={connectingUserId === peer.userId}
-                          className="w-full h-9 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-sm"
+                          className="w-full h-7 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-sm text-[10px]"
                           size="sm"
                         >
                           {connectingUserId === peer.userId ? (
@@ -453,6 +488,55 @@ export default function PeerSearchPage() {
                 </div>
               </div>
             )}
+
+            {/* User Bio Section */}
+            <Card className="min-w-0 border-accent/20 bg-accent/5">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserCircle2 className="h-5 w-5 text-primary" />
+                  {t("your_profile") || "Your Profile"}
+                </CardTitle>
+                <CardDescription>
+                  {t("profile_description") || "Share a bit about yourself to help others connect with you"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="userBio" className="text-sm">
+                    {t("bio_label") || "Bio"} ({userBio.length}/200)
+                  </Label>
+                  <textarea
+                    id="userBio"
+                    value={userBio}
+                    onChange={(e) => setUserBio(e.target.value.slice(0, 200))}
+                    placeholder={t("bio_placeholder") || "e.g., I enjoy reading and gaming. Looking for someone to talk about daily life and share experiences..."}
+                    className="w-full min-h-[100px] p-3 rounded-lg border border-border bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    maxLength={200}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {t("bio_tip") || "💡 Be genuine! Avoid sharing personal details like full name, address, or contact info."}
+                  </p>
+                </div>
+                <Button
+                  onClick={handleSaveBio}
+                  disabled={isSavingBio || !userBio.trim()}
+                  className="w-full bg-gradient-to-r from-accent to-accent/80 hover:from-accent/90 hover:to-accent/70 text-white"
+                  size="sm"
+                >
+                  {isSavingBio ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      {t("saving") || "Saving..."}
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      {t("save_profile") || "Save Profile"}
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
 
             {/* Mood Selection */}
             <Card className="min-w-0">
