@@ -106,6 +106,8 @@ const dictionaries: Record<Locale, Dict> = {
     ai_greeting: "Hello! I'm your AI companion. How can I support you today?",
     ai_error: "I'm sorry, I'm having trouble responding right now. Please try again.",
     start_chat: "Start Chat",
+    chat_button: "Chat",
+    connecting: "Connecting...",
     type_message: "Type your message...",
     send: "Send",
     
@@ -491,6 +493,8 @@ const dictionaries: Record<Locale, Dict> = {
     ai_greeting: "नमस्ते! मैं आपका AI साथी हूं। आज मैं आपकी कैसे सहायता कर सकता हूं?",
     ai_error: "क्षमा करें, मुझे अभी जवाब देने में परेशानी हो रही है। कृपया पुनः प्रयास करें।",
     start_chat: "चैट शुरू करें",
+    chat_button: "चैट",
+    connecting: "कनेक्ट हो रहा है...",
     type_message: "अपना संदेश टाइप करें...",
     send: "भेजें",
     
@@ -753,6 +757,8 @@ const dictionaries: Record<Locale, Dict> = {
     ai_greeting: "হ্যালো! আমি আপনার এআই সঙ্গী। আজ আমি আপনাকে কীভাবে সহায়তা করতে পারি?",
     ai_error: "দুঃখিত, আমার এখন উত্তর দিতে সমস্যা হচ্ছে। অনুগ্রহ করে আবার চেষ্টা করুন।",
     start_chat: "চ্যাট শুরু করুন",
+    chat_button: "চ্যাট",
+    connecting: "সংযুক্ত হচ্ছে...",
     type_message: "আপনার বার্তা টাইপ করুন...",
     send: "পাঠান",
     
@@ -1014,6 +1020,8 @@ const dictionaries: Record<Locale, Dict> = {
     ai_greeting: "வணக்கம்! நான் உங்கள் AI துணை. இன்று நான் உங்களுக்கு எப்படி ஆதரவளிக்க முடியும்?",
     ai_error: "மன்னிக்கவும், இப்போது பதிலளிப்பதில் எனக்கு சிக்கல் உள்ளது. தயவுசெய்து மீண்டும் முயற்சிக்கவும்.",
     start_chat: "அரட்டையைத் தொடங்கவும்",
+    chat_button: "அரட்டை",
+    connecting: "இணைக்கிறது...",
     type_message: "உங்கள் செய்தியை தட்டச்சு செய்யவும்...",
     send: "அனுப்பவும்",
     
@@ -1275,6 +1283,8 @@ const dictionaries: Record<Locale, Dict> = {
     ai_greeting: "నమస్కారం! నేను మీ AI సహచరుడిని. ఈరోజు నేను మీకు ఎలా సహాయపడగలను?",
     ai_error: "క్షమించండి, ఇప్పుడు ప్రతిస్పందించడంలో నాకు సమస్య ఉంది. దయచేసి మళ్లీ ప్రయత్నించండి.",
     start_chat: "చాట్ ప్రారంభించండి",
+    chat_button: "చాట్",
+    connecting: "కనెక్ట్ చేస్తోంది...",
     type_message: "మీ సందేశాన్ని టైప్ చేయండి...",
     send: "పంపండి",
     
@@ -1536,6 +1546,8 @@ const dictionaries: Record<Locale, Dict> = {
     ai_greeting: "नमस्कार! मी तुमचा AI साथी आहे. मी आज तुम्हाला कशी मदत करू शकतो?",
     ai_error: "मला माफ करा, मला आत्ता प्रतिसाद देण्यास समस्या येत आहे. कृपया पुन्हा प्रयत्न करा.",
     start_chat: "चॅट सुरू करा",
+    chat_button: "चॅट",
+    connecting: "कनेक्ट करत आहे...",
     type_message: "संदेश टाइप करा...",
     send: "पाठवा",
     
