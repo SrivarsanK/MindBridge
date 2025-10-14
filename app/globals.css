@@ -316,19 +316,19 @@ textarea,
   --card: hsl(200 25% 98%);
   --border: hsl(200 15% 88%);
   --muted: hsl(200 15% 94%);
-  --mood-spacing: 1.15; /* More breathing room */
+  --mood-spacing: 1.08; /* Slightly more breathing room */
   --mood-shadow: 0.08; /* Softer shadows */
   --mood-contrast: 0.92; /* Slightly reduced contrast */
 }
 
 /* Apply spacious layout for anxious state */
 [data-mood="anxious"] .mood-adaptive-card:not(.card-fixed-layout) {
-  padding: calc(1rem * var(--mood-spacing));
-  gap: calc(0.75rem * var(--mood-spacing));
+  padding: calc(0.75rem * var(--mood-spacing));
+  gap: calc(0.5rem * var(--mood-spacing));
 }
 
 [data-mood="anxious"] .mood-adaptive-grid {
-  gap: calc(1.5rem * var(--mood-spacing));
+  gap: calc(1rem * var(--mood-spacing));
 }
 
 /* Prevent mood spacing from affecting cards with fixed layout */
@@ -367,7 +367,7 @@ textarea,
   --border: hsl(25 15% 84%);
   --muted: hsl(25 18% 90%);
   --accent: hsl(35 85% 50%); /* Brighter warm accent */
-  --mood-spacing: 1.05;
+  --mood-spacing: 1.02;
   --mood-shadow: 0.12;
   --mood-contrast: 0.95;
 }
@@ -388,7 +388,7 @@ textarea,
   --card: hsl(0 0% 100%);
   --border: hsl(0 0% 85%);
   --destructive: hsl(355 85% 50%); /* More visible red */
-  --mood-spacing: 1.1; /* Clear spacing */
+  --mood-spacing: 1.05; /* Clear spacing */
   --mood-shadow: 0.2; /* Stronger shadows for clarity */
   --mood-contrast: 1.05; /* Higher contrast */
 }
@@ -427,7 +427,7 @@ textarea,
   --border: hsl(200 15% 20%);
   --muted: hsl(200 15% 15%);
   --muted-foreground: hsl(200 12% 58%);
-  --mood-spacing: 1.15; /* More breathing room */
+  --mood-spacing: 1.08; /* Slightly more breathing room */
   --mood-shadow: 0.18; /* Softer shadows */
   --mood-contrast: 0.9; /* Reduced contrast for calm */
 }
@@ -459,7 +459,7 @@ textarea,
   --muted-foreground: hsl(25 12% 58%);
   --accent: hsl(35 75% 55%); /* Bright warm accent */
   --accent-foreground: hsl(25 20% 10%);
-  --mood-spacing: 1.05;
+  --mood-spacing: 1.02;
   --mood-shadow: 0.22;
   --mood-contrast: 0.92;
 }
@@ -476,7 +476,7 @@ textarea,
   --muted-foreground: hsl(0 0% 65%);
   --destructive: hsl(355 75% 55%); /* Visible red for alerts */
   --destructive-foreground: hsl(0 0% 100%);
-  --mood-spacing: 1.1;
+  --mood-spacing: 1.05;
   --mood-shadow: 0.35; /* Strong shadows for depth */
   --mood-contrast: 1.08; /* Higher contrast */
 }

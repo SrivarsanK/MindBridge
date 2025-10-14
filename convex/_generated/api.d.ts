@@ -24,6 +24,7 @@ import type * as moderation from "../moderation.js";
 import type * as peerMatching from "../peerMatching.js";
 import type * as privacy from "../privacy.js";
 import type * as router from "../router.js";
+import type * as userPatterns from "../userPatterns.js";
 import type * as users from "../users.js";
 
 /**
@@ -46,6 +47,7 @@ declare const fullApi: ApiFromModules<{
   peerMatching: typeof peerMatching;
   privacy: typeof privacy;
   router: typeof router;
+  userPatterns: typeof userPatterns;
   users: typeof users;
 }>;
 export declare const api: FilterApi<

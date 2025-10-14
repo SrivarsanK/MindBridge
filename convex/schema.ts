@@ -331,9 +331,103 @@ const applicationTables = {
     .index("by_user_id", ["userId"])
     .index("by_user_and_type", ["userId", "insightType"])
     .index("by_generated_at", ["generatedAt"]),
+
+  // User Conversation Patterns for LSTM Personalization
+  userConversationPatterns: defineTable({
+    userId: v.id("users"),
+    emotionalProfile: v.object({
+      dominantEmotions: v.array(v.string()), // e.g., ["anxious", "hopeful", "stressed"]
+      emotionalTrends: v.array(v.object({
+        emotion: v.string(),
+        frequency: v.number(),
+        recentOccurrences: v.array(v.number()), // timestamps
+      })),
+      responsePreferences: v.array(v.string()), // e.g., ["empathetic", "solution-focused"]
+    }),
+    topicPreferences: v.object({
+      interests: v.array(v.string()), // Topics user engages with
+      avoidances: v.array(v.string()), // Topics user doesn't engage with
+      favoriteTopics: v.array(v.object({
+        topic: v.string(),
+        engagementScore: v.number(),
+      })),
+    }),
+    communicationStyle: v.object({
+      preferredTone: v.union(
+        v.literal("formal"),
+        v.literal("casual"),
+        v.literal("empathetic"),
+        v.literal("direct"),
+        v.literal("supportive")
+      ),
+      responseLength: v.union(
+        v.literal("brief"),
+        v.literal("moderate"),
+        v.literal("detailed")
+      ),
+      languageComplexity: v.union(
+        v.literal("simple"),
+        v.literal("moderate"),
+        v.literal("advanced")
+      ),
+    }),
+    conversationPatterns: v.object({
+      averageMessageLength: v.number(),
+      commonPhrases: v.array(v.string()),
+      timeOfDayPattern: v.array(v.object({
+        hour: v.number(),
+        frequency: v.number(),
+      })),
+      sessionDuration: v.number(), // average in seconds
+      conversationFrequency: v.number(), // conversations per week
+    }),
+    personalizedContext: v.string(), // LSTM-generated summary for context injection
+    conversationCount: v.number(), // Total conversations analyzed
+    lastUpdated: v.number(),
+    version: v.number(),
+    personalizationEnabled: v.boolean(),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_last_updated", ["lastUpdated"]),
+
+  // Conversation Embeddings for LSTM Processing
+  conversationEmbeddings: defineTable({
+    userId: v.id("users"),
+    conversationId: v.id("conversations"),
+    // Store embedding as string (JSON array) due to Convex limitations
+    embeddingVector: v.string(), // JSON stringified number array
+    timestamp: v.number(),
+    emotionalState: v.string(),
+    topics: v.array(v.string()),
+    sentimentScore: v.number(),
+    messageCount: v.number(),
+    sessionDuration: v.number(),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_conversation", ["conversationId"])
+    .index("by_timestamp", ["timestamp"]),
+
+  // Pattern Learning Sessions (tracks LSTM model updates)
+  patternLearningSessions: defineTable({
+    userId: v.id("users"),
+    conversationsAnalyzed: v.number(),
+    patternsExtracted: v.array(v.object({
+      patternType: v.string(),
+      confidence: v.number(),
+      description: v.string(),
+    })),
+    modelVersion: v.string(),
+    processingTime: v.number(), // milliseconds
+    timestamp: v.number(),
+    success: v.boolean(),
+    errorMessage: v.optional(v.string()),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_timestamp", ["timestamp"]),
 };
 
 export default defineSchema({
   ...authTables,
   ...applicationTables,
 });
+

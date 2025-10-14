@@ -69,7 +69,13 @@
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.9",
-    "zod": "3.25.76"
+    "zod": "3.25.76",
+    "@tensorflow/tfjs": "^4.20.0",
+    "@tensorflow/tfjs-node": "^4.20.0",
+    "natural": "^7.0.7",
+    "sentiment": "^5.0.2",
+    "compromise": "^14.13.0",
+    "stopword": "^3.1.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.9",

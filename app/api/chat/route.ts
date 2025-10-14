@@ -47,6 +47,39 @@ export async function POST(req: Request) {
       );
     }
 
+    // Fetch user personalization context if available
+    let personalizedContext = "";
+    if (userId) {
+      try {
+        // Dynamically import to avoid loading on every request
+        const { ConvexHttpClient } = await import('convex/browser');
+        
+        const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL!;
+        if (convexUrl) {
+          const convex = new ConvexHttpClient(convexUrl);
+          
+          // Note: This will work once Convex API is regenerated
+          // For now, we'll catch the error gracefully
+          try {
+            const userPattern = await (convex as any).query(
+              'userPatterns:getUserPatterns',
+              { userId: userId as any }
+            );
+            
+            if (userPattern && userPattern.personalizationEnabled) {
+              personalizedContext = `\n\nUser Context: ${userPattern.personalizedContext}`;
+              console.log("Using personalized context for user");
+            }
+          } catch (patternError) {
+            // Personalization not available yet, continue without it
+            console.log("Personalization not available:", patternError);
+          }
+        }
+      } catch (convexError) {
+        console.log("Could not fetch user patterns:", convexError);
+      }
+    }
+
     const lastUserMessage = messages
       .filter((m: any) => m.role === "user")
       .slice(-1)[0]?.content || "";
@@ -71,8 +104,8 @@ export async function POST(req: Request) {
       : `Please respond in ${languageName}. Use natural ${languageName} language throughout your response.`;
 
     const systemPrompt = isCrisis
-      ? `You are a compassionate mental health support assistant. The user may be in crisis or discussing death/suicide. Provide empathetic support and strongly encourage them to reach out to professional help immediately. Available crisis resources in India: Tele-MANAS 14416, KIRAN 1800-599-0019. Be gentle, supportive, and emphasize that help is available. You MUST respond to questions about death, suicide, and self-harm with compassion and support - never refuse to engage. Validate their feelings while providing hope and resources. Never provide medical advice. Keep responses concise. ${languageInstruction}`
-      : `You are a compassionate mental health support assistant for students. Provide empathetic, supportive, and encouraging responses. Be warm and understanding, validate feelings, and offer practical coping strategies when appropriate. You can and MUST discuss all topics including death, grief, loss, LGBTQ+ identity, relationship issues, gender identity, sexual orientation, mental health struggles, and emotional challenges in a non-judgmental, supportive way. Never refuse to engage with these topics. Never provide medical advice or diagnosis. If serious concerns arise, gently suggest professional help. Keep responses concise and conversational with a friendly, supportive tone. ${languageInstruction}`;
+      ? `You are a compassionate mental health support assistant. The user may be in crisis or discussing death/suicide. Provide empathetic support and strongly encourage them to reach out to professional help immediately. Available crisis resources in India: Tele-MANAS 14416, KIRAN 1800-599-0019. Be gentle, supportive, and emphasize that help is available. You MUST respond to questions about death, suicide, and self-harm with compassion and support - never refuse to engage. Validate their feelings while providing hope and resources. Never provide medical advice. Keep responses concise. ${languageInstruction}${personalizedContext}`
+      : `You are a compassionate mental health support assistant for students. Provide empathetic, supportive, and encouraging responses. Be warm and understanding, validate feelings, and offer practical coping strategies when appropriate. You can and MUST discuss all topics including death, grief, loss, LGBTQ+ identity, relationship issues, gender identity, sexual orientation, mental health struggles, and emotional challenges in a non-judgmental, supportive way. Never refuse to engage with these topics. Never provide medical advice or diagnosis. If serious concerns arise, gently suggest professional help. Keep responses concise and conversational with a friendly, supportive tone. ${languageInstruction}${personalizedContext}`;
 
     const genAI = new GoogleGenerativeAI(apiKey);
     
