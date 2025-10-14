@@ -68,27 +68,52 @@ export const processPeerMatch = internalAction({
       return null;
     }
 
-    // Simple matching algorithm (in production, use ML model)
-    let bestMatch: any = candidates[0];
-    let bestScore = 0;
-
-    for (const candidate of candidates) {
+    // Calculate scores for all candidates
+    const scoredCandidates = candidates.map(candidate => {
       const score = calculateMatchScore(
         args.mood,
         args.lonelinessLevel,
         args.interests,
         candidate
       );
+      
+      console.log(`   Candidate ${candidate.userId}: score ${score.toFixed(2)}`);
+      
+      return { candidate, score };
+    });
 
-      console.log(`   Candidate ${candidate.userId}: score ${score}`);
+    // Sort by score (highest first)
+    scoredCandidates.sort((a, b) => b.score - a.score);
 
-      if (score > bestScore) {
-        bestScore = score;
-        bestMatch = candidate;
+    // Select from top matches with weighted randomness
+    // This prevents always matching with the exact same person
+    // while still favoring better matches
+    let selectedMatch;
+    
+    if (scoredCandidates.length === 1) {
+      selectedMatch = scoredCandidates[0];
+    } else {
+      // Weight the selection towards higher scores
+      // Top match has highest chance, but not guaranteed
+      const topCandidates = scoredCandidates.slice(0, Math.min(5, scoredCandidates.length));
+      const weights = topCandidates.map((_, index) => Math.pow(2, topCandidates.length - index));
+      const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+      
+      let random = Math.random() * totalWeight;
+      let selectedIndex = 0;
+      
+      for (let i = 0; i < weights.length; i++) {
+        random -= weights[i];
+        if (random <= 0) {
+          selectedIndex = i;
+          break;
+        }
       }
+      
+      selectedMatch = topCandidates[selectedIndex];
     }
 
-    console.log(`✅ Best match found with score: ${bestScore}`);
+    console.log(`✅ Selected match with score: ${selectedMatch.score.toFixed(2)}`);
 
     // Generate ice-breaker
     const iceBreaker = await generateIceBreaker(args.mood, args.interests);
@@ -96,8 +121,8 @@ export const processPeerMatch = internalAction({
     // Create match
     const matchId: Id<"peerMatches"> = await ctx.runMutation(internal.peerMatching.createMatch, {
       user1Id: args.userId,
-      user2Id: bestMatch.userId,
-      matchScore: bestScore,
+      user2Id: selectedMatch.candidate.userId,
+      matchScore: selectedMatch.score,
       mood: args.mood,
       lonelinessLevel: args.lonelinessLevel,
       interests: args.interests,
@@ -117,21 +142,51 @@ export const loadPotentialMatches = internalQuery({
     timezone: v.string(),
   },
   handler: async (ctx, args) => {
+    // Get recently active profiles (last 30 minutes for better real-time matching)
+    const thirtyMinutesAgo = Date.now() - 30 * 60 * 1000;
+    
     const profiles = await ctx.db
       .query("userProfiles")
       .withIndex("by_last_active")
       .order("desc")
-      .take(50);
+      .filter((q) => q.gte(q.field("lastActive"), thirtyMinutesAgo))
+      .take(100); // Increased to get more candidates
+
+    // Get existing matches for this user to avoid re-matching
+    const existingMatches = await ctx.db
+      .query("peerMatches")
+      .withIndex("by_user1", (q) => q.eq("user1Id", args.userId))
+      .collect();
+
+    const reverseMatches = await ctx.db
+      .query("peerMatches")
+      .withIndex("by_user2", (q) => q.eq("user2Id", args.userId))
+      .collect();
+
+    // Create a set of user IDs to exclude (already matched in last 24 hours)
+    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+    const excludedUserIds = new Set<string>();
+    
+    [...existingMatches, ...reverseMatches].forEach(match => {
+      // Only exclude recent matches (last 24 hours)
+      if (match.createdAt > oneDayAgo) {
+        const otherUserId = match.user1Id === args.userId ? match.user2Id : match.user1Id;
+        excludedUserIds.add(otherUserId);
+      }
+    });
 
     // Filter for eligible matches
     const candidates = profiles.filter((profile) => {
       return (
         profile.userId !== args.userId &&
+        !excludedUserIds.has(profile.userId) &&
         profile.privacySettings.allowPeerMatching &&
         profile.accountStatus === "active" &&
-        Math.abs(getTimezoneOffset(profile.timezone) - getTimezoneOffset(args.timezone)) <= 3
+        Math.abs(getTimezoneOffset(profile.timezone) - getTimezoneOffset(args.timezone)) <= 4
       );
     });
+
+    console.log(`✅ Filtered to ${candidates.length} eligible candidates (excluded ${excludedUserIds.size} recent matches)`);
 
     return candidates;
   },
@@ -547,37 +602,128 @@ function calculateMatchScore(
 ): number {
   let score = 0;
 
-  // Timezone compatibility (already filtered)
-  score += 30;
+  // Base score for timezone compatibility (already filtered)
+  score += 20;
 
-  // Loneliness level compatibility (prefer similar levels)
-  const lonelinessScore = Math.max(0, 30 - Math.abs(lonelinessLevel - 5) * 5);
-  score += lonelinessScore;
+  // Loneliness level compatibility
+  // Since candidates don't have loneliness level stored, we give a base score
+  // In a real system, you'd want to store this temporarily or in profile
+  score += 15;
 
-  // Shared interests
-  const sharedInterests = interests.filter((interest) =>
-    candidate.privacySettings.shareEmotionalPatterns
-  ).length;
-  score += sharedInterests * 10;
+  // Recent activity bonus - prioritize recently active users
+  const minutesSinceActive = (Date.now() - candidate.lastActive) / 60000;
+  if (minutesSinceActive < 5) score += 25; // Very active (last 5 min)
+  else if (minutesSinceActive < 15) score += 20; // Active (last 15 min)
+  else if (minutesSinceActive < 30) score += 15; // Recently active (last 30 min)
+  else if (minutesSinceActive < 60) score += 10; // Active (last hour)
+  else score += 5; // Active today
 
-  // Recent activity bonus
-  const hoursSinceActive = (Date.now() - candidate.lastActive) / 3600000;
-  if (hoursSinceActive < 1) score += 20;
-  else if (hoursSinceActive < 24) score += 10;
+  // Privacy settings bonus - users who share emotional patterns are better matches
+  if (candidate.privacySettings?.shareEmotionalPatterns) {
+    score += 15;
+  }
 
-  return Math.min(100, score);
+  // Bonus for users who have peer matching enabled (should always be true due to filtering)
+  if (candidate.privacySettings?.allowPeerMatching) {
+    score += 10;
+  }
+
+  // Account status and bio completeness
+  if (candidate.bio && candidate.bio.length > 20) {
+    score += 10; // Has a meaningful bio
+  }
+
+  // Add some randomness to avoid always matching with the same person
+  // This creates variety in matches while still favoring better matches
+  const randomBonus = Math.random() * 10;
+  score += randomBonus;
+
+  return Math.min(100, Math.round(score));
 }
 
 async function generateIceBreaker(mood: string, interests: string[]): Promise<string> {
-  const iceBreakers = [
+  // Mood-based ice breakers
+  const moodIceBreakers: Record<string, string[]> = {
+    anxious: [
+      "What helps you feel calm when things get overwhelming?",
+      "What's something you're looking forward to?",
+      "Do you have any go-to relaxation techniques?",
+    ],
+    lonely: [
+      "What's something you wish more people understood about you?",
+      "What's been on your mind lately?",
+      "If you could talk to anyone right now, what would you say?",
+    ],
+    stressed: [
+      "What's taking up most of your mental energy right now?",
+      "How do you usually decompress after a tough day?",
+      "What's one small thing that would make today better?",
+    ],
+    sad: [
+      "What's something that usually lifts your spirits?",
+      "Would you like to share what's been weighing on you?",
+      "What's a memory that makes you smile?",
+    ],
+    hopeful: [
+      "What's something you're excited about?",
+      "What positive changes have you noticed lately?",
+      "What goals are you working toward?",
+    ],
+    confused: [
+      "What's been puzzling you lately?",
+      "Sometimes talking helps sort things out - what's on your mind?",
+      "What decision or situation has you feeling uncertain?",
+    ],
+  };
+
+  // Interest-based ice breakers
+  const interestIceBreakers: Record<string, string> = {
+    interest_music: "What kind of music have you been listening to lately?",
+    interest_reading: "Read anything interesting recently?",
+    interest_gaming: "What games are you playing right now?",
+    interest_sports: "Do you play any sports or follow any teams?",
+    interest_art: "What kind of art inspires you?",
+    interest_coding: "What are you building or learning in code?",
+    interest_movies: "Seen any good movies or shows lately?",
+    interest_travel: "Where's a place you'd love to visit?",
+    interest_cooking: "What's your favorite thing to cook?",
+    interest_photography: "What do you like to photograph?",
+    interest_fitness: "What's your workout routine like?",
+    interest_meditation: "How long have you been practicing meditation?",
+    interest_writing: "What do you like to write about?",
+    interest_dancing: "What style of dance do you enjoy?",
+    interest_nature: "What's your favorite outdoor activity?",
+    interest_science: "What scientific topics fascinate you?",
+    interest_fashion: "What's your style aesthetic?",
+    interest_volunteering: "What causes are you passionate about?",
+  };
+
+  // Try mood-specific ice breaker first
+  if (mood && moodIceBreakers[mood.toLowerCase()]) {
+    const moodOptions = moodIceBreakers[mood.toLowerCase()];
+    return moodOptions[Math.floor(Math.random() * moodOptions.length)];
+  }
+
+  // Try interest-based ice breaker
+  if (interests.length > 0) {
+    const randomInterest = interests[Math.floor(Math.random() * interests.length)];
+    if (interestIceBreakers[randomInterest]) {
+      return interestIceBreakers[randomInterest];
+    }
+  }
+
+  // Fallback to generic ice breakers
+  const genericIceBreakers = [
     "What's been on your mind lately?",
     "How has your day been going?",
     "What's something that made you smile recently?",
     "If you could do anything right now, what would it be?",
     "What's your favorite way to relax?",
+    "What's something you're grateful for today?",
+    "What's a hobby you've always wanted to try?",
   ];
 
-  return iceBreakers[Math.floor(Math.random() * iceBreakers.length)];
+  return genericIceBreakers[Math.floor(Math.random() * genericIceBreakers.length)];
 }
 
 function moderateContent(content: string): {

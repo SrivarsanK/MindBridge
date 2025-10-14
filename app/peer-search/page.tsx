@@ -326,19 +326,19 @@ export default function PeerSearchPage() {
         {/* Live Stats Banner */}
         {onlineStats && (
           <Card className="mb-6 border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5 animate-in fade-in slide-in-from-top-2 duration-500">
-            <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <CardContent className="p-3">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-lg">
-                    <Users className="h-6 w-6 text-white" />
+                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-lg">
+                    <Users className="h-5 w-5 text-white" />
                   </div>
                   <div>
                     <p className="text-sm font-medium">{t("community_status")}</p>
                     <p className="text-xs text-muted-foreground">{t("realtime_availability")}</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4 w-full sm:w-auto">
-                  <div className="text-center p-3 rounded-lg bg-card/50 border">
+                <div className="grid grid-cols-2 gap-3 w-full sm:w-auto">
+                  <div className="text-center p-2.5 rounded-lg bg-card/50 border">
                     <div className="flex items-center justify-center gap-1 mb-1">
                       <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
                       <p className="text-2xl font-bold text-green-600 dark:text-green-400">
@@ -347,7 +347,7 @@ export default function PeerSearchPage() {
                     </div>
                     <p className="text-xs text-muted-foreground">{t("users_online")}</p>
                   </div>
-                  <div className="text-center p-3 rounded-lg bg-card/50 border">
+                  <div className="text-center p-2.5 rounded-lg bg-card/50 border">
                     <div className="flex items-center justify-center gap-1 mb-1">
                       <Loader2 className="h-3 w-3 text-orange-500 animate-spin" />
                       <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
@@ -364,9 +364,9 @@ export default function PeerSearchPage() {
 
         {/* Privacy Notice */}
         <Card className="mb-6 border-primary/20 bg-primary/5">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <Shield className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+          <CardContent className="p-3">
+            <div className="flex items-start gap-2.5">
+              <Shield className="h-4 w-4 text-primary mt-0.5 shrink-0" />
               <div className="space-y-1">
                 <p className="text-sm font-medium">{t("privacy_protected")}</p>
                 <p className="text-xs text-muted-foreground">
@@ -383,7 +383,7 @@ export default function PeerSearchPage() {
             {/* Browse Available Peers */}
             {availablePeers && availablePeers.length > 0 && (
               <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5">
-                <CardHeader>
+                <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle className="flex items-center gap-2">
@@ -399,7 +399,7 @@ export default function PeerSearchPage() {
                     </Badge>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-0">
                   <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr">
                     {availablePeers.map((peer: any) => (
                       <div
@@ -491,16 +491,16 @@ export default function PeerSearchPage() {
 
             {/* User Bio Section */}
             <Card className="min-w-0 border-accent/20 bg-accent/5">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
                   <UserCircle2 className="h-5 w-5 text-primary" />
                   {t("your_profile") || "Your Profile"}
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-xs">
                   {t("profile_description") || "Share a bit about yourself to help others connect with you"}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="pt-0 space-y-3">
                 <div className="space-y-2">
                   <Label htmlFor="userBio" className="text-sm">
                     {t("bio_label") || "Bio"} ({userBio.length}/200)
@@ -510,7 +510,7 @@ export default function PeerSearchPage() {
                     value={userBio}
                     onChange={(e) => setUserBio(e.target.value.slice(0, 200))}
                     placeholder={t("bio_placeholder") || "e.g., I enjoy reading and gaming. Looking for someone to talk about daily life and share experiences..."}
-                    className="w-full min-h-[100px] p-3 rounded-lg border border-border bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    className="w-full min-h-[80px] p-2.5 rounded-lg border border-border bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
                     maxLength={200}
                   />
                   <p className="text-xs text-muted-foreground">
@@ -540,30 +540,30 @@ export default function PeerSearchPage() {
 
             {/* Mood Selection */}
             <Card className="min-w-0">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
                   <Heart className="h-5 w-5 text-primary" />
                   {t("how_feeling")}
                 </CardTitle>
-                <CardDescription>{t("select_mood_desc")}</CardDescription>
+                <CardDescription className="text-xs">{t("select_mood_desc")}</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <CardContent className="pt-0">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   {MOOD_OPTIONS.map((mood) => {
                     const IconComponent = mood.icon
                     return (
                       <button
                         key={mood.value}
                         onClick={() => setSelectedMood(mood.value)}
-                        className={`p-4 rounded-xl border-2 transition-all hover:scale-105 ${
+                        className={`p-3 rounded-xl border-2 transition-all hover:scale-105 ${
                           selectedMood === mood.value
                             ? `border-primary bg-primary/10 shadow-lg`
                             : "border-border hover:border-primary/50"
                         }`}
                       >
-                        <div className="flex flex-col items-center gap-2">
-                          <IconComponent className="w-8 h-8" />
-                          <p className="text-sm font-medium text-center">{t(mood.label)}</p>
+                        <div className="flex flex-col items-center gap-1.5">
+                          <IconComponent className="w-6 h-6" />
+                          <p className="text-xs font-medium text-center">{t(mood.label)}</p>
                         </div>
                       </button>
                     )
@@ -574,17 +574,17 @@ export default function PeerSearchPage() {
 
             {/* Loneliness Level */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
                   <Globe className="h-5 w-5 text-primary" />
                   {t("connection_need_level")}
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-xs">
                   {t("connection_need_desc")}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+              <CardContent className="pt-0">
+                <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">{t("just_browsing")}</span>
                     <span className="text-2xl font-bold text-primary">{lonelinessLevel}</span>
@@ -619,14 +619,14 @@ export default function PeerSearchPage() {
 
             {/* Interests Selection */}
             <Card className="min-w-0">
-              <CardHeader>
+              <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 text-base">
                       <Sparkles className="h-5 w-5 text-primary" />
                       {t("interests_title")}
                     </CardTitle>
-                    <CardDescription>{t("interests_desc")}</CardDescription>
+                    <CardDescription className="text-xs">{t("interests_desc")}</CardDescription>
                   </div>
                   <Button
                     variant="outline"
@@ -638,7 +638,7 @@ export default function PeerSearchPage() {
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="pt-0 space-y-3">
                 {/* Search Bar */}
                 {showFilters && (
                   <div className="relative">
@@ -654,12 +654,12 @@ export default function PeerSearchPage() {
 
                 {/* Selected Interests */}
                 {selectedInterests.length > 0 && (
-                  <div className="flex flex-wrap gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                  <div className="flex flex-wrap gap-2 p-2.5 rounded-lg bg-primary/5 border border-primary/20">
                     {selectedInterests.map((interest) => (
                       <Badge
                         key={interest}
                         variant="secondary"
-                        className="px-3 py-1 gap-1 cursor-pointer hover:bg-destructive/20"
+                        className="px-2.5 py-1 gap-1 cursor-pointer hover:bg-destructive/20 text-xs"
                         onClick={() => toggleInterest(interest)}
                       >
                         {t(interest)}
@@ -675,9 +675,7 @@ export default function PeerSearchPage() {
                     <Badge
                       key={interest}
                       variant={selectedInterests.includes(interest) ? "default" : "outline"}
-                      className="px-3 py-1.5 cursor-pointer hover:scale-105 transition-transform"
-                      onClick={() => toggleInterest(interest)}
-                    >
+                      className="px-2.5 py-1 cursor-pointer hover:scale-105 transition-transform text-xs">
                       {t(interest)}
                     </Badge>
                   ))}
@@ -695,8 +693,7 @@ export default function PeerSearchPage() {
             <Button
               onClick={handleSearch}
               disabled={isSearching || !selectedMood || selectedInterests.length === 0}
-              className="w-full h-14 text-lg font-semibold bg-gradient-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
-            >
+              className="w-full h-12 text-base font-semibold bg-gradient-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none">
               {isSearching ? (
                 <>
                   <Loader2 className="h-5 w-5 mr-2 animate-spin" />
@@ -712,25 +709,23 @@ export default function PeerSearchPage() {
           </div>
 
           {/* Sidebar Info */}
-          <div className="space-y-6 min-w-0">
+          <div className="space-y-4 min-w-0">
             {/* Active Matches */}
             <Card className="min-w-0">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
                   <MessageCircle className="h-5 w-5 text-primary" />
                   {t("active_matches_title")}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 {activeMatches && activeMatches.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {activeMatches.map((match: any) => (
                       <div
                         key={match._id}
-                        className="p-3 rounded-lg border bg-card hover:bg-accent/5 transition-colors cursor-pointer"
-                        onClick={() => router.push(`/peer-chat/${match._id}`)}
-                      >
-                        <div className="flex items-center justify-between mb-2">
+                        className="p-2.5 rounded-lg border bg-card hover:bg-accent/5 transition-colors cursor-pointer">
+                        <div className="flex items-center justify-between mb-1.5">
                           <span className="text-sm font-medium">{t("anonymous_peer")}</span>
                           <Badge variant="secondary" className="text-xs">
                             {Math.round(match.matchScore * 100)}{t("percent_match")}
@@ -739,7 +734,7 @@ export default function PeerSearchPage() {
                         <p className="text-xs text-muted-foreground line-clamp-2">
                           {match.iceBreaker}
                         </p>
-                        <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground">
                           <MessageCircle className="h-3 w-3" />
                           <span>{match.messageCount} {t("messages")}</span>
                         </div>
@@ -747,8 +742,8 @@ export default function PeerSearchPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-6">
-                    <Users className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+                  <div className="text-center py-4">
+                    <Users className="h-10 w-10 mx-auto mb-2 text-muted-foreground/50" />
                     <p className="text-sm text-muted-foreground">{t("no_active_matches")}</p>
                     <p className="text-xs text-muted-foreground mt-1">
                       {t("start_search")}
@@ -760,31 +755,31 @@ export default function PeerSearchPage() {
 
             {/* How it Works */}
             <Card className="min-w-0">
-              <CardHeader>
-                <CardTitle className="text-lg">{t("matching_tips")}</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">{t("matching_tips")}</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <span className="text-sm font-bold text-primary">1</span>
+              <CardContent className="pt-0 space-y-2.5">
+                <div className="flex items-start gap-2.5">
+                  <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <span className="text-xs font-bold text-primary">1</span>
                   </div>
                   <div>
                     <p className="text-sm font-medium">{t("tip_honest")}</p>
                     <p className="text-xs text-muted-foreground">{t("tip_honest_desc")}</p>
                   </div>
                 </div>
-                <div className="flex items-start gap-3">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <span className="text-sm font-bold text-primary">2</span>
+                <div className="flex items-start gap-2.5">
+                  <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <span className="text-xs font-bold text-primary">2</span>
                   </div>
                   <div>
                     <p className="text-sm font-medium">{t("tip_interests")}</p>
                     <p className="text-xs text-muted-foreground">{t("tip_interests_desc")}</p>
                   </div>
                 </div>
-                <div className="flex items-start gap-3">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <span className="text-sm font-bold text-primary">3</span>
+                <div className="flex items-start gap-2.5">
+                  <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <span className="text-xs font-bold text-primary">3</span>
                   </div>
                   <div>
                     <p className="text-sm font-medium">{t("tip_available")}</p>
@@ -796,13 +791,13 @@ export default function PeerSearchPage() {
 
             {/* Safety Tips */}
             <Card className="border-yellow-500/20 bg-yellow-500/5 min-w-0">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
                   <Shield className="h-5 w-5 text-yellow-500" />
                   {t("safety_first")}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2 text-xs text-muted-foreground">
+              <CardContent className="pt-0 space-y-1.5 text-xs text-muted-foreground">
                 <p>• {t("safety_no_personal_info")}</p>
                 <p>• {t("safety_report_behavior")}</p>
                 <p>• {t("safety_end_anytime")}</p>

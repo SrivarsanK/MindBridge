@@ -260,6 +260,11 @@ const dictionaries: Record<Locale, Dict> = {
     percent_match: "% match",
     online_text: "Online",
     searching_text: "Searching",
+    available_peers_title: "Available Peers",
+    available_peers_desc: "Connect directly with available peers",
+    just_now: "Just now",
+    few_minutes_ago: "Few minutes ago",
+    recently_active: "Recently active",
     
     // Interest Options (18 interests)
     interest_music: "Music",
@@ -511,6 +516,11 @@ const dictionaries: Record<Locale, Dict> = {
     percent_match: "% मेल",
     online_text: "ऑनलाइन",
     searching_text: "खोजा जा रहा है",
+    available_peers_title: "उपलब्ध साथी",
+    available_peers_desc: "उपलब्ध साथियों के साथ सीधे जुड़ें",
+    just_now: "अभी-अभी",
+    few_minutes_ago: "कुछ मिनट पहले",
+    recently_active: "हाल ही में सक्रिय",
     
     // Interest Options (18 interests)
     interest_music: "संगीत",
@@ -766,6 +776,11 @@ const dictionaries: Record<Locale, Dict> = {
     percent_match: "% মিল",
     online_text: "অনলাইন",
     searching_text: "খোঁজা হচ্ছে",
+    available_peers_title: "উপলব্ধ সঙ্গী",
+    available_peers_desc: "উপলব্ধ সঙ্গীদের সাথে সরাসরি সংযুক্ত হন",
+    just_now: "এইমাত্র",
+    few_minutes_ago: "কয়েক মিনিট আগে",
+    recently_active: "সম্প্রতি সক্রিয়",
     
     // Interest Options (18 interests)
     interest_music: "সঙ্গীত",
@@ -1020,6 +1035,11 @@ const dictionaries: Record<Locale, Dict> = {
     percent_match: "% பொருத்தம்",
     online_text: "ஆன்லைன்",
     searching_text: "தேடுகிறது",
+    available_peers_title: "கிடைக்கும் சகர்கள்",
+    available_peers_desc: "கிடைக்கும் சகர்களுடன் நேரடியாக இணைக்கவும்",
+    just_now: "இப்போதே",
+    few_minutes_ago: "சில நிமிடங்களுக்கு முன்பு",
+    recently_active: "சமீபத்தில் செயலில்",
     
     // Interest Options (18 interests)
     interest_music: "இசை",
@@ -1274,6 +1294,11 @@ const dictionaries: Record<Locale, Dict> = {
     percent_match: "% మ్యాచ్",
     online_text: "ఆన్‌లైన్",
     searching_text: "శోధిస్తోంది",
+    available_peers_title: "అందుబాటులో ఉన్న తోటివారు",
+    available_peers_desc: "అందుబాటులో ఉన్న తోటివారితో నేరుగా కనెక్ట్ అవ్వండి",
+    just_now: "ఇప్పుడే",
+    few_minutes_ago: "కొన్ని నిమిషాల క్రితం",
+    recently_active: "ఇటీవల క్రియాశీలంగా",
     
     // Interest Options (18 interests)
     interest_music: "సంగీతం",
@@ -1527,6 +1552,11 @@ const dictionaries: Record<Locale, Dict> = {
     percent_match: "% जुळणी",
     online_text: "ऑनलाइन",
     searching_text: "शोधत आहे",
+    available_peers_title: "उपलब्ध सहकारी",
+    available_peers_desc: "उपलब्ध सहकाऱ्यांशी थेट जुडा",
+    just_now: "आत्ताच",
+    few_minutes_ago: "काही मिनिटांपूर्वी",
+    recently_active: "अलीकडे सक्रिय",
     
     // Interest Options (18 interests)
     interest_music: "संगीत",

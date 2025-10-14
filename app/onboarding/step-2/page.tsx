@@ -23,6 +23,35 @@ export default function Step2() {
   
   const createProfile = useMutation(api.users.createOrUpdateProfile)
 
+  // Retry helper with exponential backoff for auth timing issues
+  const retryWithBackoff = async <T,>(
+    fn: () => Promise<T>,
+    maxRetries = 3,
+    initialDelay = 500
+  ): Promise<T> => {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        return await fn();
+      } catch (error) {
+        const isAuthError = error instanceof Error && 
+          (error.message.includes("Not authenticated") || 
+           error.message.includes("authentication"));
+        
+        const isLastAttempt = attempt === maxRetries - 1;
+        
+        if (!isAuthError || isLastAttempt) {
+          throw error; // Re-throw if not auth error or last attempt
+        }
+        
+        // Wait with exponential backoff before retry
+        const delay = initialDelay * Math.pow(2, attempt);
+        console.log(`[Step2] Auth not ready, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+    throw new Error("Max retries exceeded");
+  };
+
   const handleContinue = async () => {
     console.log('[Step2] handleContinue called');
     console.log('[Step2] Form data:', { name, age, gender });
@@ -46,9 +75,11 @@ export default function Step2() {
       };
       
       console.log('[Step2] Calling createProfile with:', profileData);
-      const result = await createProfile(profileData);
-      console.log('[Step2] Profile created successfully:', result);
       
+      // Use retry logic for authentication timing issues
+      const result = await retryWithBackoff(() => createProfile(profileData));
+      
+      console.log('[Step2] Profile created successfully:', result);
       console.log('[Step2] Navigating to step 3...');
       router.push("/onboarding/step-3")
     } catch (error) {
@@ -58,7 +89,14 @@ export default function Step2() {
       
       // Show a more detailed error message
       const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-      alert(`Failed to save profile: ${errorMessage}. Please try again.`)
+      
+      // Check if it's still an auth error after retries
+      if (errorMessage.includes("Not authenticated") || errorMessage.includes("authentication")) {
+        alert(`Authentication is taking longer than expected. Please try again in a moment, or refresh the page if the issue persists.`)
+      } else {
+        alert(`Failed to save profile: ${errorMessage}. Please try again.`)
+      }
+      
       setIsSubmitting(false)
     }
   }

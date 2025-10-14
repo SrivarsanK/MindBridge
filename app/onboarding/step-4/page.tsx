@@ -32,6 +32,35 @@ export default function Step4() {
     }
   }, [currentUser, signIn, isAuthenticating])
 
+  // Retry helper with exponential backoff for auth timing issues
+  const retryWithBackoff = async <T,>(
+    fn: () => Promise<T>,
+    maxRetries = 3,
+    initialDelay = 500
+  ): Promise<T> => {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        return await fn();
+      } catch (error) {
+        const isAuthError = error instanceof Error && 
+          (error.message.includes("Not authenticated") || 
+           error.message.includes("authentication"));
+        
+        const isLastAttempt = attempt === maxRetries - 1;
+        
+        if (!isAuthError || isLastAttempt) {
+          throw error; // Re-throw if not auth error or last attempt
+        }
+        
+        // Wait with exponential backoff before retry
+        const delay = initialDelay * Math.pow(2, attempt);
+        console.log(`[Step4] Auth not ready, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+    throw new Error("Max retries exceeded");
+  };
+
   const handleFinish = async () => {
     // Ensure user is authenticated before saving
     if (!currentUser) {
@@ -41,21 +70,32 @@ export default function Step4() {
 
     setIsSaving(true)
     try {
-      // Create user profile with privacy settings
-      await createOrUpdateProfile({
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        privacySettings: {
-          allowPeerMatching: peer,
-          allowDreamAnalysis: dreams,
-          shareEmotionalPatterns: anxiety,
-          dataRetentionDays: 90,
-        }
-      })
+      // Create user profile with privacy settings - use retry logic
+      await retryWithBackoff(() => 
+        createOrUpdateProfile({
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          privacySettings: {
+            allowPeerMatching: peer,
+            allowDreamAnalysis: dreams,
+            shareEmotionalPatterns: anxiety,
+            dataRetentionDays: 90,
+          }
+        })
+      );
       
       router.push("/dashboard")
     } catch (error) {
       console.error("Error creating profile:", error)
-      alert("Failed to complete onboarding. Please try again.")
+      
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      
+      // Check if it's still an auth error after retries
+      if (errorMessage.includes("Not authenticated") || errorMessage.includes("authentication")) {
+        alert("Authentication is taking longer than expected. Please try again in a moment, or refresh the page if the issue persists.")
+      } else {
+        alert("Failed to complete onboarding. Please try again.")
+      }
+      
       setIsSaving(false)
     }
   }
