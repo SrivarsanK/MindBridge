@@ -1,0 +1,17 @@
+.breathingBubble {
+  width: 80%;
+  height: 80%;
+  transition: transform 1.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.bubbleShine {
+  position: absolute;
+  top: 15%;
+  left: 15%;
+  width: 33.333333%;
+  height: 33.333333%;
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, 0.3);
+  filter: blur(2rem);
+  pointer-events: none;
+}

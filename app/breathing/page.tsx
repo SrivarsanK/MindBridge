@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Slider } from "@/components/ui/slider"
 import { useRouter } from "next/navigation"
 import {
   Wind,
@@ -23,6 +26,7 @@ import {
   Activity,
   Clock,
 } from "lucide-react"
+import styles from "./breathing.module.css"
 
 interface BreathingExercise {
   id: string
@@ -123,6 +127,8 @@ export default function BreathingExercisesPage() {
   const [showTimeDialog, setShowTimeDialog] = useState(false)
   const [pendingExercise, setPendingExercise] = useState<BreathingExercise | null>(null)
   const [selectedDuration, setSelectedDuration] = useState(300) // Default 5 minutes
+  const [customMinutes, setCustomMinutes] = useState("")
+  const [showCustomInput, setShowCustomInput] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentPhase, setCurrentPhase] = useState<"inhale" | "hold1" | "exhale" | "hold2">("inhale")
   const [phaseTimeLeft, setPhaseTimeLeft] = useState(0)
@@ -176,12 +182,40 @@ export default function BreathingExercisesPage() {
   const handleExerciseSelect = (exercise: BreathingExercise) => {
     setPendingExercise(exercise)
     setSelectedDuration(exercise.duration) // Set default duration
+    setCustomMinutes("")
+    setShowCustomInput(false)
     setShowTimeDialog(true)
+  }
+
+  // Handle custom time input
+  const handleCustomTimeClick = () => {
+    setShowCustomInput(true)
+    setSelectedDuration(0) // Clear preset selection
+  }
+
+  // Apply custom time
+  const applyCustomTime = () => {
+    const minutes = parseInt(customMinutes)
+    if (minutes && minutes > 0 && minutes <= 60) {
+      setSelectedDuration(minutes * 60)
+    }
+  }
+
+  // Handle slider change
+  const handleSliderChange = (value: number[]) => {
+    const minutes = value[0]
+    setCustomMinutes(minutes.toString())
+    setSelectedDuration(minutes * 60)
   }
 
   // Start exercise with selected duration
   const startExercise = () => {
     if (!pendingExercise) return
+    
+    // Validate duration
+    if (selectedDuration <= 0) {
+      return // Don't start if no valid duration selected
+    }
     
     const exerciseWithCustomDuration = { ...pendingExercise, duration: selectedDuration }
     setSelectedExercise(exerciseWithCustomDuration)
@@ -354,8 +388,8 @@ export default function BreathingExercisesPage() {
     return (
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-primary/5">
         {/* Header */}
-        <div className="border-b bg-card/50 backdrop-blur-sm">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+          <div className="container mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
             <Button
               variant="ghost"
               size="sm"
@@ -363,13 +397,14 @@ export default function BreathingExercisesPage() {
               className="gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back
+              <span className="hidden sm:inline">Back</span>
             </Button>
-            <h1 className="text-xl font-semibold">{selectedExercise.name}</h1>
+            <h1 className="text-lg sm:text-xl font-semibold truncate mx-4">{selectedExercise.name}</h1>
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setSoundEnabled(!soundEnabled)}
+              aria-label={soundEnabled ? "Disable sound" : "Enable sound"}
             >
               {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
             </Button>
@@ -377,9 +412,9 @@ export default function BreathingExercisesPage() {
         </div>
 
         {/* Main Exercise Area */}
-        <div className="flex-1 flex flex-col items-center justify-center p-8">
+        <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8">
           {/* Stats Bar */}
-          <div className="flex items-center gap-6 mb-8">
+          <div className="flex items-center gap-4 sm:gap-6 mb-8">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Timer className="h-4 w-4" />
               <span className="text-sm font-medium">{formatTime(totalTimeLeft)}</span>
@@ -390,74 +425,64 @@ export default function BreathingExercisesPage() {
             </div>
           </div>
 
-          {/* Breathing Bubble */}
-          <div className="relative mb-12 w-[350px] h-[350px] flex items-center justify-center">
+          {/* Breathing Bubble Container */}
+          <div className="relative mb-8 sm:mb-12 w-full max-w-[350px] aspect-square flex items-center justify-center">
             {/* Outer glow rings */}
-            <div className="absolute inset-0 rounded-full border-2 border-primary/10 animate-pulse" 
-                 style={{ width: "350px", height: "350px" }} />
-            <div className="absolute inset-0 rounded-full border border-primary/5" 
-                 style={{ width: "370px", height: "370px", margin: "-10px" }} />
+            <div className="absolute inset-0 rounded-full border-2 border-primary/10 animate-pulse" />
+            <div className="absolute -inset-2.5 rounded-full border border-primary/5" />
             
             {/* Main bubble */}
             <div
-              className={`rounded-full bg-gradient-to-br ${selectedExercise.bgGradient} flex items-center justify-center relative overflow-hidden`}
+              className={`${styles.breathingBubble} absolute rounded-full bg-gradient-to-br ${selectedExercise.bgGradient} flex items-center justify-center overflow-hidden shadow-2xl`}
               style={{
-                width: "280px",
-                height: "280px",
                 transform: `scale(${getCircleScale()})`,
-                transition: "transform 1.2s cubic-bezier(0.4, 0.0, 0.2, 1)",
-                boxShadow: `
-                  0 0 60px rgba(var(--primary-rgb, 59, 130, 246), 0.5),
-                  0 0 100px rgba(var(--primary-rgb, 59, 130, 246), 0.3),
-                  inset 0 0 60px rgba(255, 255, 255, 0.1)
-                `,
               }}
             >
               {/* Bubble shine effect */}
-              <div 
-                className="absolute top-8 left-8 w-24 h-24 rounded-full bg-white/30 blur-2xl"
-                style={{ pointerEvents: "none" }}
-              />
+              <div className={styles.bubbleShine} />
               
               {/* Content */}
               <div className="text-center text-white relative z-10">
-                <div className="text-6xl font-bold mb-2 drop-shadow-lg">{phaseTimeLeft}</div>
-                <div className="text-2xl font-medium tracking-wide drop-shadow-md">{getPhaseInstruction()}</div>
+                <div className="text-5xl sm:text-6xl font-bold mb-2 drop-shadow-lg">{phaseTimeLeft}</div>
+                <div className="text-xl sm:text-2xl font-medium tracking-wide drop-shadow-md">{getPhaseInstruction()}</div>
               </div>
             </div>
           </div>
 
           {/* Controls */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center justify-center gap-4 sm:gap-6 mb-6">
             <Button
               size="lg"
               variant="outline"
               onClick={resetExercise}
-              className="rounded-full h-14 w-14 p-0"
+              className="rounded-full h-14 w-14 sm:h-16 sm:w-16 p-0 flex items-center justify-center"
+              aria-label="Reset exercise"
             >
-              <RotateCcw className="h-5 w-5" />
+              <RotateCcw className="h-5 w-5 sm:h-6 sm:w-6" />
             </Button>
             
             <Button
               size="lg"
               onClick={togglePlayPause}
-              className={`rounded-full h-20 w-20 p-0 bg-gradient-to-br ${selectedExercise.bgGradient} hover:opacity-90 text-white shadow-xl`}
+              className={`rounded-full h-20 w-20 sm:h-24 sm:w-24 p-0 flex items-center justify-center bg-gradient-to-br ${selectedExercise.bgGradient} hover:opacity-90 text-white shadow-2xl transition-all hover:scale-105`}
+              aria-label={isPlaying ? "Pause" : "Play"}
             >
-              {isPlaying ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8 ml-1" />}
+              {isPlaying ? <Pause className="h-8 w-8 sm:h-10 sm:w-10" /> : <Play className="h-8 w-8 sm:h-10 sm:w-10 ml-0.5" />}
             </Button>
             
             <Button
               size="lg"
               variant="outline"
               onClick={endExercise}
-              className="rounded-full h-14 w-14 p-0"
+              className="rounded-full h-14 w-14 sm:h-16 sm:w-16 p-0 flex items-center justify-center"
+              aria-label="End exercise"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-5 w-5 sm:h-6 sm:w-6" />
             </Button>
           </div>
 
           {/* Pattern Info */}
-          <div className="mt-8 text-center text-muted-foreground text-sm">
+          <div className="text-center text-muted-foreground text-xs sm:text-sm px-4">
             <p>
               {selectedExercise.pattern.inhale}s inhale
               {selectedExercise.pattern.hold1 && ` • ${selectedExercise.pattern.hold1}s hold`}
@@ -473,8 +498,8 @@ export default function BreathingExercisesPage() {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-primary/5">
       {/* Header */}
-      <div className="border-b bg-card/50 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-6">
+      <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+        <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
           <Button
             variant="ghost"
             size="sm"
@@ -482,56 +507,57 @@ export default function BreathingExercisesPage() {
             className="mb-4 gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
+            <span className="hidden sm:inline">Back to Dashboard</span>
+            <span className="sm:hidden">Back</span>
           </Button>
           
-          <div className="flex items-center gap-4 mb-2">
-            <div className="flex items-center justify-center h-12 w-12 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 shadow-lg">
-              <Wind className="h-6 w-6 text-white" />
+          <div className="flex items-center gap-3 sm:gap-4 mb-2">
+            <div className="flex items-center justify-center h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 shadow-lg flex-shrink-0">
+              <Wind className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">Breathing Exercises</h1>
-              <p className="text-muted-foreground">Science-backed techniques for calm and clarity</p>
+              <h1 className="text-2xl sm:text-3xl font-bold">Breathing Exercises</h1>
+              <p className="text-sm sm:text-base text-muted-foreground">Science-backed techniques for calm and clarity</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 container mx-auto px-4 py-8">
+      <div className="flex-1 container mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Info Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <Card className="border-blue-500/20 bg-blue-500/5">
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 sm:pt-6">
               <div className="flex items-center gap-3 mb-2">
-                <Brain className="h-5 w-5 text-blue-500" />
-                <h3 className="font-semibold">Reduces Stress</h3>
+                <Brain className="h-5 w-5 text-blue-500 flex-shrink-0" />
+                <h3 className="font-semibold text-sm sm:text-base">Reduces Stress</h3>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 Controlled breathing activates your parasympathetic nervous system, reducing cortisol and anxiety.
               </p>
             </CardContent>
           </Card>
 
           <Card className="border-green-500/20 bg-green-500/5">
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 sm:pt-6">
               <div className="flex items-center gap-3 mb-2">
-                <Heart className="h-5 w-5 text-green-500" />
-                <h3 className="font-semibold">Improves Focus</h3>
+                <Heart className="h-5 w-5 text-green-500 flex-shrink-0" />
+                <h3 className="font-semibold text-sm sm:text-base">Improves Focus</h3>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 Oxygen-rich blood flow to your brain enhances concentration, memory, and mental clarity.
               </p>
             </CardContent>
           </Card>
 
           <Card className="border-purple-500/20 bg-purple-500/5">
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 sm:pt-6">
               <div className="flex items-center gap-3 mb-2">
-                <Zap className="h-5 w-5 text-purple-500" />
-                <h3 className="font-semibold">Boosts Recovery</h3>
+                <Zap className="h-5 w-5 text-purple-500 flex-shrink-0" />
+                <h3 className="font-semibold text-sm sm:text-base">Boosts Recovery</h3>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 Deep breathing helps manage cravings, reduces withdrawal symptoms, and strengthens willpower.
               </p>
             </CardContent>
@@ -539,57 +565,57 @@ export default function BreathingExercisesPage() {
         </div>
 
         {/* Exercise Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {breathingExercises.map((exercise) => {
             const Icon = exercise.icon
             return (
               <Card
                 key={exercise.id}
-                className="group hover:shadow-xl transition-all duration-300 cursor-pointer border-primary/10 hover:border-primary/30 overflow-hidden"
+                className="group hover:shadow-xl transition-all duration-300 cursor-pointer border-primary/10 hover:border-primary/30 overflow-hidden flex flex-col"
                 onClick={() => handleExerciseSelect(exercise)}
               >
                 <div className={`h-2 bg-gradient-to-r ${exercise.bgGradient}`} />
                 
-                <CardHeader>
+                <CardHeader className="pb-3">
                   <div className="flex items-start justify-between mb-3">
-                    <div className={`flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br ${exercise.bgGradient} shadow-md`}>
-                      <Icon className="h-6 w-6 text-white" />
+                    <div className={`flex items-center justify-center h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-gradient-to-br ${exercise.bgGradient} shadow-md flex-shrink-0`}>
+                      <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                     </div>
                     <Badge variant="outline" className="text-xs">
                       {exercise.difficulty}
                     </Badge>
                   </div>
                   
-                  <CardTitle className="text-xl mb-2">{exercise.name}</CardTitle>
-                  <CardDescription className="text-sm leading-relaxed">
+                  <CardTitle className="text-lg sm:text-xl mb-2">{exercise.name}</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm leading-relaxed">
                     {exercise.description}
                   </CardDescription>
                 </CardHeader>
 
-                <CardContent>
-                  <div className="space-y-3">
+                <CardContent className="flex-1 flex flex-col">
+                  <div className="space-y-3 flex-1">
                     {/* Benefits */}
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 min-h-[72px]">
                       {exercise.benefits.slice(0, 3).map((benefit, idx) => (
                         <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <div className={`h-1.5 w-1.5 rounded-full bg-gradient-to-r ${exercise.bgGradient}`} />
+                          <div className={`h-1.5 w-1.5 rounded-full bg-gradient-to-r ${exercise.bgGradient} flex-shrink-0`} />
                           <span>{benefit}</span>
                         </div>
                       ))}
                     </div>
-
-                    {/* Start Button */}
-                    <Button
-                      className={`w-full mt-4 bg-gradient-to-r ${exercise.bgGradient} hover:opacity-90 text-white`}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleExerciseSelect(exercise)
-                      }}
-                    >
-                      <Play className="h-4 w-4 mr-2" />
-                      Start Exercise
-                    </Button>
                   </div>
+
+                  {/* Start Button */}
+                  <Button
+                    className={`w-full mt-4 bg-gradient-to-r ${exercise.bgGradient} hover:opacity-90 text-white text-sm`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleExerciseSelect(exercise)
+                    }}
+                  >
+                    <Play className="h-4 w-4 mr-2" />
+                    Start Exercise
+                  </Button>
                 </CardContent>
               </Card>
             )
@@ -597,18 +623,18 @@ export default function BreathingExercisesPage() {
         </div>
 
         {/* Tips Section */}
-        <Card className="mt-8 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+        <Card className="mt-6 sm:mt-8 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-primary" />
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Target className="h-5 w-5 text-primary flex-shrink-0" />
               Tips for Effective Breathing
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               <div className="space-y-2">
                 <h4 className="font-semibold text-sm">Before You Start</h4>
-                <ul className="space-y-1.5 text-sm text-muted-foreground">
+                <ul className="space-y-1.5 text-xs sm:text-sm text-muted-foreground">
                   <li>• Find a quiet, comfortable place</li>
                   <li>• Sit or lie down with good posture</li>
                   <li>• Loosen tight clothing</li>
@@ -618,7 +644,7 @@ export default function BreathingExercisesPage() {
               
               <div className="space-y-2">
                 <h4 className="font-semibold text-sm">During Practice</h4>
-                <ul className="space-y-1.5 text-sm text-muted-foreground">
+                <ul className="space-y-1.5 text-xs sm:text-sm text-muted-foreground">
                   <li>• Breathe through your nose when possible</li>
                   <li>• Focus on your breath, not thoughts</li>
                   <li>• Don't force it - stay relaxed</li>
@@ -633,33 +659,125 @@ export default function BreathingExercisesPage() {
         <Dialog open={showTimeDialog} onOpenChange={setShowTimeDialog}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
+              <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
                 <Clock className="h-5 w-5 text-primary" />
                 Choose Exercise Duration
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-xs sm:text-sm">
                 {pendingExercise && `How long would you like to practice ${pendingExercise.name}?`}
               </DialogDescription>
             </DialogHeader>
             
-            <div className="grid grid-cols-2 gap-3 mt-4">
+            {/* Preset Durations */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mt-4">
               {[3, 5, 10, 15, 20, 30].map((minutes) => (
                 <Button
                   key={minutes}
-                  variant={selectedDuration === minutes * 60 ? "default" : "outline"}
-                  className={`h-20 flex flex-col items-center justify-center gap-2 ${
-                    selectedDuration === minutes * 60 
+                  variant={selectedDuration === minutes * 60 && !showCustomInput ? "default" : "outline"}
+                  className={`h-16 sm:h-20 flex flex-col items-center justify-center gap-1 sm:gap-2 ${
+                    selectedDuration === minutes * 60 && !showCustomInput
                       ? `bg-gradient-to-r ${pendingExercise?.bgGradient} text-white border-0` 
                       : ""
                   }`}
-                  onClick={() => setSelectedDuration(minutes * 60)}
+                  onClick={() => {
+                    setSelectedDuration(minutes * 60)
+                    setShowCustomInput(false)
+                    setCustomMinutes("")
+                  }}
                 >
-                  <Clock className="h-5 w-5" />
-                  <span className="text-lg font-semibold">{minutes} min</span>
+                  <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="text-base sm:text-lg font-semibold">{minutes} min</span>
                 </Button>
               ))}
             </div>
 
+            {/* Custom Time Section */}
+            <div className="mt-4 space-y-3">
+              {!showCustomInput ? (
+                <Button
+                  variant="outline"
+                  className="w-full h-12 flex items-center justify-center gap-2"
+                  onClick={handleCustomTimeClick}
+                >
+                  <Timer className="h-4 w-4" />
+                  <span>Custom Duration</span>
+                </Button>
+              ) : (
+                <div className="space-y-4 p-4 border rounded-lg bg-card">
+                  <div className="space-y-2">
+                    <Label htmlFor="custom-slider" className="text-sm font-medium">
+                      Choose custom duration (1-60 minutes)
+                    </Label>
+                    
+                    {/* Large Display */}
+                    <div className="flex items-center justify-center py-4">
+                      <div className="text-center">
+                        <div className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                          {customMinutes || "1"}
+                        </div>
+                        <div className="text-sm text-muted-foreground mt-1">
+                          minute{(customMinutes && parseInt(customMinutes) !== 1) ? "s" : ""}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Slider */}
+                    <div className="space-y-2">
+                      <Slider
+                        id="custom-slider"
+                        min={1}
+                        max={60}
+                        step={1}
+                        value={[parseInt(customMinutes) || 1]}
+                        onValueChange={handleSliderChange}
+                        className={`w-full ${pendingExercise?.bgGradient ? '[&_[role=slider]]:border-primary' : ''}`}
+                      />
+                      
+                      {/* Min/Max Labels */}
+                      <div className="flex justify-between text-xs text-muted-foreground px-1">
+                        <span>1 min</span>
+                        <span>60 min</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Number Input (optional for precise entry) */}
+                  <div className="flex gap-2">
+                    <Input
+                      id="custom-minutes"
+                      type="number"
+                      min="1"
+                      max="60"
+                      placeholder="Or type..."
+                      value={customMinutes}
+                      onChange={(e) => {
+                        const val = e.target.value
+                        setCustomMinutes(val)
+                        const num = parseInt(val)
+                        if (num >= 1 && num <= 60) {
+                          setSelectedDuration(num * 60)
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          applyCustomTime()
+                        }
+                      }}
+                      className="flex-1"
+                    />
+                  </div>
+
+                  {/* Confirmation Message */}
+                  {selectedDuration > 0 && customMinutes && (
+                    <div className="text-sm font-medium text-center py-2 px-3 rounded-md bg-primary/10 text-primary">
+                      ✓ {selectedDuration / 60} minute{selectedDuration !== 60 ? "s" : ""} selected
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
             <div className="flex gap-3 mt-6">
               <Button
                 variant="outline"
@@ -667,6 +785,8 @@ export default function BreathingExercisesPage() {
                 onClick={() => {
                   setShowTimeDialog(false)
                   setPendingExercise(null)
+                  setCustomMinutes("")
+                  setShowCustomInput(false)
                 }}
               >
                 Cancel
@@ -674,6 +794,7 @@ export default function BreathingExercisesPage() {
               <Button
                 className={`flex-1 bg-gradient-to-r ${pendingExercise?.bgGradient} text-white`}
                 onClick={startExercise}
+                disabled={selectedDuration <= 0}
               >
                 <Play className="h-4 w-4 mr-2" />
                 Start

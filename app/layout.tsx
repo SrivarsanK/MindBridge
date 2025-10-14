@@ -67,6 +67,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               `,
             }}
           />
+          {/* Razorpay Checkout Script */}
+          <script src="https://checkout.razorpay.com/v1/checkout.js" async />
         </head>
         <body className="font-sans antialiased">
           <ThemeProvider

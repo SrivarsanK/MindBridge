@@ -425,6 +425,177 @@ const applicationTables = {
   })
     .index("by_user_id", ["userId"])
     .index("by_timestamp", ["timestamp"]),
+
+  // Professional Support System
+  professionals: defineTable({
+    userId: v.id("users"),
+    name: v.string(),
+    title: v.string(), // e.g., "Clinical Psychologist", "Psychiatrist"
+    specializations: v.array(v.string()), // e.g., ["Addiction Recovery", "CBT"]
+    languages: v.array(v.string()),
+    experience: v.number(), // years of experience
+    qualifications: v.array(v.string()), // e.g., ["Ph.D. Psychology", "Licensed Clinical Psychologist"]
+    bio: v.string(),
+    profileImage: v.optional(v.string()),
+    
+    // Razorpay Integration
+    razorpaySubAccountId: v.optional(v.string()), // Razorpay sub-account ID
+    bankAccount: v.optional(v.object({
+      accountNumber: v.string(),
+      ifscCode: v.string(),
+      accountHolderName: v.string(),
+    })),
+    
+    // Session Pricing (in paise, 1 INR = 100 paise)
+    sessionPrices: v.object({
+      video: v.number(),
+      phone: v.number(),
+      chat: v.number(),
+    }),
+    
+    // Availability
+    availability: v.array(v.object({
+      day: v.union(
+        v.literal("monday"),
+        v.literal("tuesday"),
+        v.literal("wednesday"),
+        v.literal("thursday"),
+        v.literal("friday"),
+        v.literal("saturday"),
+        v.literal("sunday")
+      ),
+      slots: v.array(v.object({
+        start: v.string(), // "HH:MM" format
+        end: v.string(),
+      })),
+    })),
+    
+    // Verification
+    verified: v.boolean(),
+    verifiedAt: v.optional(v.number()),
+    verifiedBy: v.optional(v.id("users")),
+    
+    // Stats
+    totalSessions: v.number(),
+    averageRating: v.number(),
+    totalReviews: v.number(),
+    
+    // Status
+    status: v.union(
+      v.literal("pending"),
+      v.literal("active"),
+      v.literal("inactive"),
+      v.literal("suspended")
+    ),
+    
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_status", ["status"])
+    .index("by_verified", ["verified"])
+    .index("by_specializations", ["specializations"]),
+
+  // Booking System
+  bookings: defineTable({
+    userId: v.id("users"),
+    professionalId: v.id("professionals"),
+    
+    // Session Details
+    sessionType: v.union(v.literal("video"), v.literal("phone"), v.literal("chat")),
+    scheduledAt: v.number(),
+    duration: v.number(), // minutes
+    
+    // Payment Details
+    amount: v.number(), // in paise
+    currency: v.string(), // "INR"
+    razorpayOrderId: v.optional(v.string()),
+    razorpayPaymentId: v.optional(v.string()),
+    razorpaySignature: v.optional(v.string()),
+    
+    // Status
+    status: v.union(
+      v.literal("pending"),
+      v.literal("confirmed"),
+      v.literal("completed"),
+      v.literal("cancelled"),
+      v.literal("refunded")
+    ),
+    
+    // Session Data
+    meetingLink: v.optional(v.string()), // For video sessions
+    notes: v.optional(v.string()),
+    
+    // Timestamps
+    createdAt: v.number(),
+    confirmedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+    cancelledAt: v.optional(v.number()),
+    
+    // Cancellation
+    cancellationReason: v.optional(v.string()),
+    cancelledBy: v.optional(v.union(v.literal("user"), v.literal("professional"), v.literal("system"))),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_professional_id", ["professionalId"])
+    .index("by_status", ["status"])
+    .index("by_scheduled_at", ["scheduledAt"])
+    .index("by_razorpay_order", ["razorpayOrderId"]),
+
+  // Transactions
+  transactions: defineTable({
+    bookingId: v.id("bookings"),
+    userId: v.id("users"),
+    professionalId: v.id("professionals"),
+    
+    // Payment Details
+    razorpayOrderId: v.string(),
+    razorpayPaymentId: v.optional(v.string()),
+    amount: v.number(), // in paise
+    currency: v.string(),
+    
+    // Split Details
+    platformFee: v.number(), // in paise (15%)
+    professionalAmount: v.number(), // in paise (85%)
+    
+    // Status
+    status: v.union(
+      v.literal("created"),
+      v.literal("authorized"),
+      v.literal("captured"),
+      v.literal("refunded"),
+      v.literal("failed")
+    ),
+    
+    // Timestamps
+    createdAt: v.number(),
+    capturedAt: v.optional(v.number()),
+    refundedAt: v.optional(v.number()),
+    
+    // Additional Info
+    paymentMethod: v.optional(v.string()),
+    errorCode: v.optional(v.string()),
+    errorDescription: v.optional(v.string()),
+  })
+    .index("by_booking_id", ["bookingId"])
+    .index("by_user_id", ["userId"])
+    .index("by_professional_id", ["professionalId"])
+    .index("by_razorpay_order", ["razorpayOrderId"])
+    .index("by_status", ["status"])
+    .index("by_created_at", ["createdAt"]),
+
+  // Professional Reviews
+  professionalReviews: defineTable({
+    bookingId: v.id("bookings"),
+    userId: v.id("users"),
+    professionalId: v.id("professionals"),
+    rating: v.number(), // 1-5
+    review: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_professional_id", ["professionalId"])
+    .index("by_user_id", ["userId"])
+    .index("by_booking_id", ["bookingId"]),
 };
 
 export default defineSchema({
