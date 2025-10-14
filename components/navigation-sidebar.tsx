@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { 
   Home, 
   Users, 
+  UserCircle,
   Settings, 
   Menu,
   X,
@@ -30,6 +31,12 @@ export default function NavigationSidebar() {
       description: t("nav_peer_search_desc")
     },
     {
+      name: t("professional_support"),
+      href: "/professional-support",
+      icon: UserCircle,
+      description: t("nav_professional_support_desc")
+    },
+    {
       name: t("settings"),
       href: "/settings",
       icon: Settings,
@@ -50,7 +57,7 @@ export default function NavigationSidebar() {
   }
 
   // Define pages where sidebar should be visible
-  const allowedPages = ['/dashboard', '/peer-search', '/settings']
+  const allowedPages = ['/dashboard', '/peer-search', '/professional-support', '/settings']
   
   // Check if current page should show sidebar
   const shouldShowSidebar = allowedPages.some(page => pathname?.startsWith(page))
