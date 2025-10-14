@@ -115,3 +115,7 @@ backup/
 .eslintcache
 .stylelintcache
 
+
+
+#Ignore cursor AI rules
+.cursor\rules\codacy.mdc

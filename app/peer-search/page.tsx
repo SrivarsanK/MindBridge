@@ -377,9 +377,9 @@ export default function PeerSearchPage() {
           </CardContent>
         </Card>
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-6 lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_360px]">
           {/* Main Search Panel */}
-          <div className="lg:col-span-2 space-y-6 min-w-0">
+          <div className="space-y-6 min-w-0">
             {/* Browse Available Peers */}
             {availablePeers && availablePeers.length > 0 && (
               <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5">
@@ -400,70 +400,70 @@ export default function PeerSearchPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr">
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 auto-rows-fr">
                     {availablePeers.map((peer: any) => (
                       <div
                         key={peer.userId}
-                        className="p-2 rounded-md border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all flex flex-col justify-between"
+                        className="p-2.5 rounded-lg border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all flex flex-col justify-between gap-2"
                       >
                         <div className="space-y-1.5">
                           {/* Peer Avatar & Name */}
                           <div className="flex items-center gap-2">
-                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center shrink-0">
-                              <span className="text-xs font-bold text-primary">
+                            <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center shrink-0">
+                              <span className="text-sm font-bold text-primary">
                                 {peer.displayName ? peer.displayName[0].toUpperCase() : "A"}
                               </span>
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1">
-                                <h3 className="font-medium text-xs truncate">
+                              <div className="flex items-center gap-1.5">
+                                <h3 className="font-semibold text-sm truncate">
                                   {peer.displayName || "Anonymous User"}
                                 </h3>
-                                <div className="h-1.5 w-1.5 rounded-full bg-green-500 shrink-0"></div>
+                                <div className="h-2 w-2 rounded-full bg-green-500 shrink-0"></div>
                               </div>
-                              <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
                                 {peer.age && (
                                   <span>{peer.age}y</span>
                                 )}
-                                {peer.age && <span>•</span>}
-                                <span>{formatTimeAgo(peer.lastActive)}</span>
+                                {peer.age && peer.timezone && <span>•</span>}
+                                {peer.timezone && (
+                                  <span className="truncate">{peer.timezone.split('/')[1]?.replace(/_/g, ' ') || peer.timezone}</span>
+                                )}
                               </div>
                             </div>
                           </div>
 
                           {/* Bio */}
-                          {peer.bio && peer.bio !== "No bio yet" ? (
-                            <div className="p-1.5 rounded bg-muted/30">
-                              <p className="text-[10px] text-muted-foreground italic line-clamp-2 leading-snug">
+                          {peer.bio && peer.bio !== "No bio yet" && (
+                            <div className="p-2 rounded-md bg-muted/30">
+                              <p className="text-xs text-muted-foreground italic line-clamp-2 leading-relaxed break-words">
                                 "{peer.bio}"
                               </p>
                             </div>
-                          ) : null}
-
-                          {/* Timezone */}
-                          {peer.timezone && (
-                            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                              <MapPin className="h-2.5 w-2.5" />
-                              <span className="truncate">{peer.timezone.replace(/_/g, ' ')}</span>
-                            </div>
                           )}
+
+                          {/* Last Active */}
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Clock className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{formatTimeAgo(peer.lastActive)}</span>
+                          </div>
                         </div>
 
                         {/* Chat Button */}
                         <Button
                           onClick={() => handleDirectChat(peer.userId)}
                           disabled={connectingUserId === peer.userId}
-                          className="w-full h-7 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-sm text-[10px]"
+                          className="w-full h-8 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-sm text-xs font-medium"
                           size="sm"
                         >
                           {connectingUserId === peer.userId ? (
                             <>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
                               {t("connecting") || "Connecting..."}
                             </>
                           ) : (
                             <>
-                              <MessageCircle className="h-4 w-4 mr-2" />
+                              <MessageCircle className="h-3.5 w-3.5 mr-1.5" />
                               {t("chat_button") || "Chat"}
                             </>
                           )}
@@ -502,15 +502,18 @@ export default function PeerSearchPage() {
               </CardHeader>
               <CardContent className="pt-0 space-y-3">
                 <div className="space-y-2">
-                  <Label htmlFor="userBio" className="text-sm">
-                    {t("bio_label") || "Bio"} ({userBio.length}/200)
+                  <Label htmlFor="userBio" className="text-sm flex items-center justify-between">
+                    <span>{t("bio_label") || "Bio"}</span>
+                    <span className={`text-xs ${userBio.length > 180 ? 'text-orange-500' : 'text-muted-foreground'}`}>
+                      {userBio.length}/200
+                    </span>
                   </Label>
                   <textarea
                     id="userBio"
                     value={userBio}
                     onChange={(e) => setUserBio(e.target.value.slice(0, 200))}
                     placeholder={t("bio_placeholder") || "e.g., I enjoy reading and gaming. Looking for someone to talk about daily life and share experiences..."}
-                    className="w-full min-h-[80px] p-2.5 rounded-lg border border-border bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    className="w-full min-h-[90px] p-3 rounded-lg border border-border bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
                     maxLength={200}
                   />
                   <p className="text-xs text-muted-foreground">
@@ -548,22 +551,22 @@ export default function PeerSearchPage() {
                 <CardDescription className="text-xs">{t("select_mood_desc")}</CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                   {MOOD_OPTIONS.map((mood) => {
                     const IconComponent = mood.icon
                     return (
                       <button
                         key={mood.value}
                         onClick={() => setSelectedMood(mood.value)}
-                        className={`p-3 rounded-xl border-2 transition-all hover:scale-105 ${
+                        className={`p-3.5 rounded-xl border-2 transition-all hover:scale-[1.02] active:scale-95 ${
                           selectedMood === mood.value
-                            ? `border-primary bg-primary/10 shadow-lg`
-                            : "border-border hover:border-primary/50"
+                            ? `border-primary bg-primary/10 shadow-lg ring-2 ring-primary/20`
+                            : "border-border hover:border-primary/50 bg-card"
                         }`}
                       >
-                        <div className="flex flex-col items-center gap-1.5">
-                          <IconComponent className="w-6 h-6" />
-                          <p className="text-xs font-medium text-center">{t(mood.label)}</p>
+                        <div className="flex flex-col items-center gap-2">
+                          <IconComponent className={`w-7 h-7 ${selectedMood === mood.value ? 'text-primary' : 'text-muted-foreground'}`} />
+                          <p className="text-xs font-medium text-center leading-tight">{t(mood.label)}</p>
                         </div>
                       </button>
                     )
@@ -584,15 +587,14 @@ export default function PeerSearchPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">{t("just_browsing")}</span>
-                    <span className="text-2xl font-bold text-primary">{lonelinessLevel}</span>
+                    <div className="flex items-center justify-center h-12 w-12 rounded-full bg-primary/10 border-2 border-primary">
+                      <span className="text-2xl font-bold text-primary">{lonelinessLevel}</span>
+                    </div>
                     <span className="text-sm text-muted-foreground">{t("really_need_someone")}</span>
                   </div>
-                  <Label htmlFor="loneliness-slider" className="sr-only">
-                    Connection need level slider from 1 to 10
-                  </Label>
                   <input
                     id="loneliness-slider"
                     type="range"
@@ -601,14 +603,14 @@ export default function PeerSearchPage() {
                     value={lonelinessLevel}
                     onChange={(e) => setLonelinessLevel(Number(e.target.value))}
                     className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
-                    aria-label="Connection need level"
+                    aria-label="Connection need level from 1 to 10"
                   />
-                  <div className="grid grid-cols-10 gap-1">
+                  <div className="grid grid-cols-10 gap-1.5">
                     {[...Array(10)].map((_, i) => (
                       <div
                         key={i}
-                        className={`h-1 rounded-full transition-all ${
-                          i < lonelinessLevel ? "bg-primary" : "bg-muted"
+                        className={`h-1.5 rounded-full transition-all ${
+                          i < lonelinessLevel ? "bg-primary scale-y-125" : "bg-muted"
                         }`}
                       />
                     ))}
@@ -675,7 +677,9 @@ export default function PeerSearchPage() {
                     <Badge
                       key={interest}
                       variant={selectedInterests.includes(interest) ? "default" : "outline"}
-                      className="px-2.5 py-1 cursor-pointer hover:scale-105 transition-transform text-xs">
+                      className="px-2.5 py-1 cursor-pointer hover:scale-105 transition-transform text-xs"
+                      onClick={() => toggleInterest(interest)}
+                    >
                       {t(interest)}
                     </Badge>
                   ))}
@@ -693,11 +697,22 @@ export default function PeerSearchPage() {
             <Button
               onClick={handleSearch}
               disabled={isSearching || !selectedMood || selectedInterests.length === 0}
-              className="w-full h-12 text-base font-semibold bg-gradient-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none">
+              className="w-full h-12 text-base font-semibold bg-gradient-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:from-muted disabled:to-muted"
+            >
               {isSearching ? (
                 <>
                   <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                   {t("searching_peer")}
+                </>
+              ) : !selectedMood ? (
+                <>
+                  <Heart className="h-5 w-5 mr-2" />
+                  {t("select_mood_first")}
+                </>
+              ) : selectedInterests.length === 0 ? (
+                <>
+                  <Sparkles className="h-5 w-5 mr-2" />
+                  {t("select_interest_first")}
                 </>
               ) : (
                 <>
@@ -722,28 +737,30 @@ export default function PeerSearchPage() {
                 {activeMatches && activeMatches.length > 0 ? (
                   <div className="space-y-2">
                     {activeMatches.map((match: any) => (
-                      <div
+                      <button
                         key={match._id}
-                        className="p-2.5 rounded-lg border bg-card hover:bg-accent/5 transition-colors cursor-pointer">
+                        onClick={() => router.push(`/peer-chat/${match._id}`)}
+                        className="w-full p-2.5 rounded-lg border bg-card hover:bg-accent/10 hover:border-primary/50 transition-all cursor-pointer text-left"
+                      >
                         <div className="flex items-center justify-between mb-1.5">
                           <span className="text-sm font-medium">{t("anonymous_peer")}</span>
                           <Badge variant="secondary" className="text-xs">
                             {Math.round(match.matchScore * 100)}{t("percent_match")}
                           </Badge>
                         </div>
-                        <p className="text-xs text-muted-foreground line-clamp-2">
+                        <p className="text-xs text-muted-foreground line-clamp-2 break-words">
                           {match.iceBreaker}
                         </p>
                         <div className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground">
                           <MessageCircle className="h-3 w-3" />
-                          <span>{match.messageCount} {t("messages")}</span>
+                          <span>{match.messageCount || 0} {t("messages")}</span>
                         </div>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-4">
-                    <Users className="h-10 w-10 mx-auto mb-2 text-muted-foreground/50" />
+                  <div className="text-center py-6">
+                    <Users className="h-12 w-12 mx-auto mb-2 text-muted-foreground/30" />
                     <p className="text-sm text-muted-foreground">{t("no_active_matches")}</p>
                     <p className="text-xs text-muted-foreground mt-1">
                       {t("start_search")}
