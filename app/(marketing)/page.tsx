@@ -204,13 +204,13 @@ export default function Page() {
         <div className="text-center mb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border bg-accent/5 text-accent text-sm font-medium mb-4">
             <Sparkles className="h-4 w-4" />
-            <span>Features</span>
+            <span>Recovery Tools</span>
           </div>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-            Everything You Need for Mental Wellness
+            Everything You Need to Break Free
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Comprehensive tools designed specifically for student mental health
+            Evidence-based tools designed to help you overcome addiction, one day at a time
           </p>
         </div>
 

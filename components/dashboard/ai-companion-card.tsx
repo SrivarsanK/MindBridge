@@ -1,12 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Bot, User, Send, Sparkles, AlertTriangle } from "lucide-react";
+import { Bot, User, Send, Sparkles, AlertTriangle, Trash2, Download } from "lucide-react";
 import { MarkdownMessage } from "@/components/markdown-message";
 import { useLocale } from "@/components/locale-provider";
+import {
+  saveChatMessages,
+  loadChatMessages,
+  clearChatHistory,
+  exportChatHistory,
+  type ChatMessage,
+} from "@/lib/local-chat-storage";
 
 type Message = {
   role: "user" | "assistant";
@@ -24,6 +31,33 @@ export function AICompanionCard() {
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [showCrisisAlert, setShowCrisisAlert] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Load messages from localStorage on mount
+  useEffect(() => {
+    const loadedMessages = loadChatMessages();
+    if (loadedMessages.length > 0) {
+      setMessages(loadedMessages.map(msg => ({
+        role: msg.role,
+        content: msg.content,
+      })));
+      console.log("✅ Chat history restored from local storage");
+    }
+    setIsLoaded(true);
+  }, []);
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    if (isLoaded && messages.length > 1) { // More than just greeting
+      const chatMessages: ChatMessage[] = messages.map(msg => ({
+        role: msg.role,
+        content: msg.content,
+        timestamp: Date.now(),
+        locale: locale,
+      }));
+      saveChatMessages(chatMessages);
+    }
+  }, [messages, isLoaded, locale]);
 
   const sendMessage = async () => {
     if (!input.trim() || isTyping) return;
@@ -82,10 +116,9 @@ export function AICompanionCard() {
         setShowCrisisAlert(true);
       }
 
-      setMessages(prev => [
-        ...prev,
-        { role: "assistant", content: data.message }
-      ]);
+      const assistantMessage: Message = { role: "assistant", content: data.message };
+      setMessages(prev => [...prev, assistantMessage]);
+      
     } catch (error: any) {
       console.error("Chat error:", error);
       let errorMsg = t("ai_error");
@@ -112,6 +145,37 @@ export function AICompanionCard() {
     }
   };
 
+  const handleClearChat = () => {
+    if (confirm("Are you sure you want to clear all chat history? This cannot be undone.")) {
+      clearChatHistory();
+      setMessages([
+        {
+          role: "assistant",
+          content: t("ai_greeting")
+        }
+      ]);
+      console.log("🗑️ Chat history cleared");
+    }
+  };
+
+  const handleExportChat = () => {
+    try {
+      const data = exportChatHistory();
+      const blob = new Blob([data], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `mindbridge-chat-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      console.log("📥 Chat history exported");
+    } catch (error) {
+      console.error("Failed to export chat:", error);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -122,15 +186,39 @@ export function AICompanionCard() {
   return (
     <Card className="h-full flex flex-col">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg shadow-purple-500/20 shrink-0">
-            <Sparkles className="h-5 w-5 text-white" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg shadow-purple-500/20 shrink-0">
+              <Sparkles className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <CardTitle>{t("ai_companion")}</CardTitle>
+              <CardDescription className="text-xs mt-0.5">
+                💾 Stored locally on your device
+              </CardDescription>
+            </div>
           </div>
-          <span>{t("ai_companion")}</span>
-        </CardTitle>
-        <CardDescription>
-          {t("ai_companion_desc")}
-        </CardDescription>
+          <div className="flex gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleExportChat}
+              title="Export chat history"
+              className="h-8 w-8"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleClearChat}
+              title="Clear chat history"
+              className="h-8 w-8 text-destructive hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4">
         {showCrisisAlert && (
@@ -139,14 +227,15 @@ export function AICompanionCard() {
               <AlertTriangle className="h-4 w-4 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-red-900 mb-1">Crisis Support Available</h4>
+              <h4 className="font-semibold text-red-900 mb-1">🆘 Need Immediate Support?</h4>
               <p className="text-sm text-red-800 mb-2">
-                If you're in crisis, please reach out to these resources:
+                If you're in crisis or having intense cravings, reach out NOW:
               </p>
               <ul className="text-sm text-red-800 space-y-1">
-                <li><strong>Tele-MANAS:</strong> 14416 (24/7 Mental Health Support)</li>
-                <li><strong>KIRAN Helpline:</strong> 1800-599-0019</li>
-                <li><strong>Vandrevala Foundation:</strong> 1860-2662-345</li>
+                <li><strong>SAMHSA National Helpline:</strong> 1-800-662-4357 (24/7 Free, Confidential)</li>
+                <li><strong>Crisis Text Line:</strong> Text "HELLO" to 741741</li>
+                <li><strong>Suicide Prevention:</strong> Call or Text 988</li>
+                <li><strong>AA Hotline:</strong> Check local AA/NA meetings</li>
               </ul>
               <Button
                 variant="destructive"

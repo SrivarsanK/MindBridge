@@ -15,22 +15,22 @@ export default function InsightsCard() {
     return (
       <Card className="overflow-hidden border-primary/10 shadow-md hover:shadow-lg transition-all duration-300 !py-0 !gap-0 card-fixed-layout">
         <div className="bg-gradient-to-br from-primary/5 to-transparent border-b">
-          <CardHeader className="py-4">
-            <div className="flex flex-col gap-3">
+          <CardHeader className="py-2.5">
+            <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-600 shadow-lg shadow-yellow-500/20">
-                  <Lightbulb className="h-5 w-5 text-white" />
+                <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-600 shadow-lg shadow-yellow-500/20">
+                  <Lightbulb className="h-4 w-4 text-white" />
                 </div>
-                <CardTitle className="text-lg">{t("insights_card")}</CardTitle>
+                <CardTitle className="text-base">{t("insights_card")}</CardTitle>
               </div>
-              <p className="text-xs text-muted-foreground">{t("insights_desc")}</p>
+              <p className="text-[10px] text-muted-foreground">{t("insights_desc")}</p>
             </div>
           </CardHeader>
         </div>
-        <CardContent className="p-4">
-          <div className="text-center py-8">
-            <Sparkles className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-            <p className="text-sm text-muted-foreground">
+        <CardContent className="p-3">
+          <div className="text-center py-6">
+            <Sparkles className="h-10 w-10 mx-auto text-muted-foreground/30 mb-2" />
+            <p className="text-xs text-muted-foreground">
               {t("insights_empty")}
             </p>
           </div>
@@ -53,27 +53,27 @@ export default function InsightsCard() {
   return (
     <Card className="overflow-hidden border-primary/10 shadow-md hover:shadow-lg transition-all duration-300 !py-0 !gap-0">
       <div className="bg-gradient-to-br from-primary/5 to-transparent border-b">
-        <CardHeader className="py-4">
-          <div className="flex flex-col gap-3">
+        <CardHeader className="py-2.5">
+          <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
-              <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-600 shadow-lg shadow-yellow-500/20">
-                <Lightbulb className="h-5 w-5 text-white" />
+              <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-600 shadow-lg shadow-yellow-500/20">
+                <Lightbulb className="h-4 w-4 text-white" />
               </div>
-              <CardTitle className="text-lg">{t("insights_card")}</CardTitle>
+              <CardTitle className="text-base">{t("insights_card")}</CardTitle>
             </div>
-            <p className="text-xs text-muted-foreground">{t("insights_desc")}</p>
+            <p className="text-[10px] text-muted-foreground">{t("insights_desc")}</p>
           </div>
         </CardHeader>
       </div>
-      <CardContent className="p-4">
-        <div className="flex flex-col gap-3">
+      <CardContent className="p-3">
+        <div className="flex flex-col gap-2">
           {insights.slice(0, 3).map((insight) => {
             const Icon = getInsightIcon(insight.insightType)
             
             return (
               <div
                 key={insight._id}
-                className="relative group p-4 rounded-2xl border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent hover:from-primary/10 transition-all duration-300 hover:shadow-md"
+                className="relative group p-3 rounded-2xl border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent hover:from-primary/10 transition-all duration-300 hover:shadow-md"
               >
                 <button
                   onClick={() => dismissInsight({ insightId: insight._id })}
@@ -83,20 +83,20 @@ export default function InsightsCard() {
                   <X className="h-3 w-3 text-muted-foreground" />
                 </button>
                 
-                <div className="flex gap-3">
-                  <div className="flex items-center justify-center flex-shrink-0 h-11 w-11 rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-md shadow-primary/20">
-                    <Icon className="h-5 w-5 text-white" />
+                <div className="flex gap-2.5">
+                  <div className="flex items-center justify-center flex-shrink-0 h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-md shadow-primary/20">
+                    <Icon className="h-4 w-4 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-semibold mb-1">
+                    <h4 className="text-xs font-semibold mb-1">
                       {insight.insightType === "mood_pattern" ? t("insight_mood_pattern") : 
                        insight.insightType === "activity_streak" ? t("insight_activity_streak") : 
                        insight.title}
                     </h4>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
+                    <p className="text-[10px] text-muted-foreground leading-relaxed">
                       {insight.description}
                     </p>
-                    <div className="mt-2 text-[10px] text-muted-foreground/60">
+                    <div className="mt-1.5 text-[9px] text-muted-foreground/60">
                       {new Date(insight.generatedAt).toLocaleDateString()}
                     </div>
                   </div>
