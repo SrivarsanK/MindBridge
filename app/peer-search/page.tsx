@@ -490,7 +490,7 @@ export default function PeerSearchPage() {
             )}
 
             {/* User Bio Section */}
-            <Card className="min-w-0 border-accent/20 bg-accent/5 self-start">
+            <Card className="min-w-0 border-primary/20 bg-primary/5 self-start">
               <CardHeader className="pb-5">
                 <CardTitle className="flex items-center gap-3 text-xl">
                   <UserCircle2 className="h-6 w-6 text-primary shrink-0" />

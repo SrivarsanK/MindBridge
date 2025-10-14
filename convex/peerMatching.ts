@@ -171,7 +171,9 @@ export const loadPotentialMatches = internalQuery({
       // Only exclude recent matches (last 24 hours)
       if (match.createdAt > oneDayAgo) {
         const otherUserId = match.user1Id === args.userId ? match.user2Id : match.user1Id;
-        excludedUserIds.add(otherUserId);
+        if (otherUserId) {
+          excludedUserIds.add(otherUserId);
+        }
       }
     });
 
@@ -255,12 +257,17 @@ export const getActiveMatches = query({
       return [];
     }
 
+    // Get active matches where user is user1
     const matches1 = await ctx.db
       .query("peerMatches")
       .withIndex("by_user1", (q) => q.eq("user1Id", userId))
-      .filter((q) => q.eq(q.field("status"), "active"))
+      .filter((q) => q.or(
+        q.eq(q.field("status"), "active"),
+        q.eq(q.field("status"), "pending")
+      ))
       .collect();
 
+    // Get active matches where user is user2
     const matches2 = await ctx.db
       .query("peerMatches")
       .withIndex("by_user2", (q) => q.eq("user2Id", userId))
@@ -272,8 +279,28 @@ export const getActiveMatches = query({
     // Enrich matches with peer display names
     const enrichedMatches = await Promise.all(
       allMatches.map(async (match) => {
+        // For pending matches without user2Id
+        if (match.status === "pending" && !match.user2Id) {
+          return {
+            ...match,
+            peerId: null,
+            peerDisplayName: "Waiting for someone to join...",
+            isPending: true,
+          };
+        }
+
         // Determine who is the peer (the other user)
         const peerId = match.user1Id === userId ? match.user2Id : match.user1Id;
+        
+        if (!peerId) {
+          // Skip if peerId is undefined (shouldn't happen but TypeScript safety)
+          return {
+            ...match,
+            peerId: null,
+            peerDisplayName: "Unknown",
+            isPending: match.status === "pending",
+          };
+        }
         
         // Get peer's profile for display name
         const peerProfile = await ctx.db
@@ -288,6 +315,7 @@ export const getActiveMatches = query({
           ...match,
           peerId,
           peerDisplayName,
+          isPending: match.status === "pending",
         };
       })
     );
@@ -894,6 +922,10 @@ export const getMatchDetails = query({
     // Get peer user ID
     const peerId = match.user1Id === userId ? match.user2Id : match.user1Id;
 
+    if (!peerId) {
+      throw new Error("Peer ID not found in match");
+    }
+
     // Get peer profile (only pseudonym, no PII)
     const peerProfile = await ctx.db
       .query("userProfiles")
@@ -1071,5 +1103,234 @@ export const createDirectPeerMatch = mutation({
     });
 
     return { success: true, matchId, message: "Match created successfully" };
+  },
+});
+
+// Create a pending match that others can join
+export const createOpenMatch = mutation({
+  args: {
+    mood: v.string(),
+    lonelinessLevel: v.number(),
+    interests: v.array(v.string()),
+    description: v.string(), // What the user is looking for help with
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    const profile = await ctx.db
+      .query("userProfiles")
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
+      .first();
+
+    if (!profile) {
+      throw new Error("Profile not found");
+    }
+
+    if (!profile.privacySettings.allowPeerMatching) {
+      throw new Error("Peer matching is disabled in privacy settings");
+    }
+
+    // Check if user already has a pending match
+    const existingPending = await ctx.db
+      .query("peerMatches")
+      .withIndex("by_user1", (q) => q.eq("user1Id", userId))
+      .filter((q) => q.eq(q.field("status"), "pending"))
+      .first();
+
+    if (existingPending) {
+      return { 
+        success: true, 
+        matchId: existingPending._id, 
+        message: "You already have a pending match" 
+      };
+    }
+
+    // Generate ice breaker based on mood
+    const iceBreaker = await generateIceBreaker(args.mood, args.interests);
+
+    // Create pending match (no user2Id yet)
+    const matchId = await ctx.db.insert("peerMatches", {
+      user1Id: userId,
+      user2Id: undefined, // Will be set when someone joins
+      matchScore: 0, // Will be calculated when someone joins
+      matchCriteria: {
+        moodCompatibility: 0,
+        timezoneMatch: true,
+        lonelinessLevel: args.lonelinessLevel,
+        sharedInterests: args.interests,
+      },
+      status: "pending",
+      description: args.description,
+      iceBreaker,
+      createdAt: Date.now(),
+      lastActivityAt: Date.now(),
+      messageCount: 0,
+    });
+
+    // Audit log
+    await ctx.db.insert("auditLogs", {
+      userId,
+      action: "open_match_created",
+      resourceType: "peerMatch",
+      resourceId: matchId,
+      details: `Created open match: ${args.description}`,
+      timestamp: Date.now(),
+      severity: "info",
+    });
+
+    return { success: true, matchId, message: "Open match created successfully" };
+  },
+});
+
+// Get all pending matches that others can join
+export const getPendingMatches = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      return [];
+    }
+
+    const profile = await ctx.db
+      .query("userProfiles")
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
+      .first();
+
+    if (!profile?.privacySettings.allowPeerMatching) {
+      return [];
+    }
+
+    // Get all pending matches (exclude user's own pending matches)
+    const pendingMatches = await ctx.db
+      .query("peerMatches")
+      .withIndex("by_status", (q) => q.eq("status", "pending"))
+      .filter((q) => q.neq(q.field("user1Id"), userId))
+      .order("desc")
+      .take(20); // Limit to 20 most recent
+
+    // Enrich with creator information
+    const enrichedMatches = await Promise.all(
+      pendingMatches.map(async (match) => {
+        const creatorProfile = await ctx.db
+          .query("userProfiles")
+          .withIndex("by_user_id", (q) => q.eq("userId", match.user1Id))
+          .first();
+
+        const creatorDisplayName = creatorProfile?.displayName || `Peer${match.user1Id.slice(-4)}`;
+        
+        // Calculate time ago
+        const minutesAgo = Math.floor((Date.now() - match.createdAt) / 60000);
+        const timeAgo = 
+          minutesAgo < 1 ? "Just now" :
+          minutesAgo < 60 ? `${minutesAgo}m ago` :
+          minutesAgo < 1440 ? `${Math.floor(minutesAgo / 60)}h ago` :
+          `${Math.floor(minutesAgo / 1440)}d ago`;
+
+        return {
+          ...match,
+          creatorId: match.user1Id,
+          creatorDisplayName,
+          timeAgo,
+        };
+      })
+    );
+
+    return enrichedMatches;
+  },
+});
+
+// Join a pending match
+export const joinPendingMatch = mutation({
+  args: {
+    matchId: v.id("peerMatches"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    const profile = await ctx.db
+      .query("userProfiles")
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
+      .first();
+
+    if (!profile) {
+      throw new Error("Profile not found");
+    }
+
+    if (!profile.privacySettings.allowPeerMatching) {
+      throw new Error("Peer matching is disabled in privacy settings");
+    }
+
+    // Get the pending match
+    const match = await ctx.db.get(args.matchId);
+    if (!match) {
+      throw new Error("Match not found");
+    }
+
+    if (match.status !== "pending") {
+      throw new Error("This match is no longer available");
+    }
+
+    if (match.user1Id === userId) {
+      throw new Error("You cannot join your own match");
+    }
+
+    if (match.user2Id) {
+      throw new Error("This match has already been joined");
+    }
+
+    // Calculate match score based on compatibility
+    const creatorProfile = await ctx.db
+      .query("userProfiles")
+      .withIndex("by_user_id", (q) => q.eq("userId", match.user1Id))
+      .first();
+
+    const matchScore = calculateMatchScore(
+      "", // mood not needed for joining
+      match.matchCriteria.lonelinessLevel,
+      match.matchCriteria.sharedInterests,
+      {
+        lastActive: profile.lastActive,
+        privacySettings: profile.privacySettings,
+        bio: profile.bio,
+        timezone: profile.timezone,
+      }
+    );
+
+    // Update match to active with user2Id
+    await ctx.db.patch(args.matchId, {
+      user2Id: userId,
+      status: "active",
+      matchScore,
+      lastActivityAt: Date.now(),
+    });
+
+    // Audit logs
+    await ctx.db.insert("auditLogs", {
+      userId,
+      action: "joined_pending_match",
+      resourceType: "peerMatch",
+      resourceId: args.matchId,
+      details: `Joined pending match (score: ${matchScore})`,
+      timestamp: Date.now(),
+      severity: "info",
+    });
+
+    await ctx.db.insert("auditLogs", {
+      userId: match.user1Id,
+      action: "pending_match_joined",
+      resourceType: "peerMatch",
+      resourceId: args.matchId,
+      details: `Your pending match was joined`,
+      timestamp: Date.now(),
+      severity: "info",
+    });
+
+    return { success: true, matchId: args.matchId, message: "Successfully joined the match" };
   },
 });

@@ -2,8 +2,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useState, useEffect } from "react"
-import { Users, Lock, Search, MessageCircle, X, Loader2, Sparkles } from "lucide-react"
+import { Users, Lock, Search, MessageCircle, X, Loader2, Sparkles, UserPlus, Clock } from "lucide-react"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { Id } from "@/convex/_generated/dataModel"
@@ -17,6 +20,8 @@ export default function PeerMatchingCard() {
   const [selectedMood, setSelectedMood] = useState("neutral")
   const [lonelinessLevel, setLonelinessLevel] = useState(5)
   const [isCreatingProfile, setIsCreatingProfile] = useState(false)
+  const [showOpenMatchDialog, setShowOpenMatchDialog] = useState(false)
+  const [matchDescription, setMatchDescription] = useState("")
   
   // Convex mutations and queries
   const currentUser = useQuery(api.auth.loggedInUser)
@@ -24,7 +29,10 @@ export default function PeerMatchingCard() {
   const updatePrivacy = useMutation(api.users.updatePrivacySettings)
   const createProfile = useMutation(api.users.createOrUpdateProfile)
   const requestMatch = useMutation(api.peerMatching.requestPeerMatch)
+  const createOpenMatch = useMutation(api.peerMatching.createOpenMatch)
   const activeMatches = useQuery(api.peerMatching.getActiveMatches)
+  const pendingMatches = useQuery(api.peerMatching.getPendingMatches)
+  const joinMatch = useMutation(api.peerMatching.joinPendingMatch)
   const onlineStats = useQuery(api.peerMatching.getOnlineUsersStats)
   const endMatch = useMutation(api.peerMatching.endPeerMatch)
   const updateLastActive = useMutation(api.users.updateLastActive)
@@ -133,6 +141,41 @@ export default function PeerMatchingCard() {
       alert("Failed to end match")
     }
   }
+
+  const handleCreateOpenMatch = async () => {
+    if (!enabled || !matchDescription.trim()) return
+    
+    try {
+      const result = await createOpenMatch({
+        mood: selectedMood,
+        lonelinessLevel,
+        interests: ["general support", "listening", "conversation"],
+        description: matchDescription.trim(),
+      })
+      
+      if (result.success) {
+        setShowOpenMatchDialog(false)
+        setMatchDescription("")
+        // Navigate to the chat
+        router.push(`/peer-chat/${result.matchId}`)
+      }
+    } catch (error) {
+      console.error("Error creating open match:", error)
+      alert(error instanceof Error ? error.message : "Failed to create open match")
+    }
+  }
+
+  const handleJoinMatch = async (matchId: Id<"peerMatches">) => {
+    try {
+      const result = await joinMatch({ matchId })
+      if (result.success) {
+        router.push(`/peer-chat/${matchId}`)
+      }
+    } catch (error) {
+      console.error("Error joining match:", error)
+      alert(error instanceof Error ? error.message : "Failed to join match")
+    }
+  }
   
   return (
       <Card className="flex flex-col overflow-hidden border-primary/10 shadow-md hover:shadow-lg transition-all duration-300 card-fixed-layout">
@@ -202,12 +245,15 @@ export default function PeerMatchingCard() {
                     onClick={() => router.push(`/peer-chat/${match._id}`)}
                     className="flex items-center gap-2 min-w-0 flex-1 text-left">
                     <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary/80 shadow-md shadow-primary/20 flex-shrink-0">
-                      <MessageCircle className="h-4 w-4 text-white" />
+                      {match.isPending ? <Clock className="h-4 w-4 text-white" /> : <MessageCircle className="h-4 w-4 text-white" />}
                     </div>
                     <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-                      <div className="text-sm font-medium truncate">{match.peerDisplayName}</div>
+                      <div className="text-sm font-medium truncate">
+                        {match.peerDisplayName}
+                        {match.isPending && <span className="ml-2 text-xs text-orange-500">(Waiting)</span>}
+                      </div>
                       <div className="text-xs text-muted-foreground truncate">
-                        {match.messageCount || 0} messages • {match.iceBreaker || "Start chatting"}
+                        {match.description || match.iceBreaker || "Start chatting"}
                       </div>
                     </div>
                   </button>
@@ -224,6 +270,40 @@ export default function PeerMatchingCard() {
                   </Button>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Available Pending Matches */}
+          {enabled && pendingMatches && pendingMatches.length > 0 && (
+            <div className="flex flex-col gap-2 flex-shrink-0">
+              <div className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Available Recovery Partners
+              </div>
+              <div className="max-h-48 overflow-y-auto space-y-2">
+                {pendingMatches.map((match) => (
+                  <div key={match._id} className="flex items-start justify-between p-2.5 rounded-xl bg-green-500/5 border border-green-500/20 hover:bg-green-500/10 transition-colors group">
+                    <div className="flex flex-col gap-1 min-w-0 flex-1">
+                      <div className="text-sm font-medium truncate">{match.creatorDisplayName}</div>
+                      <div className="text-xs text-muted-foreground line-clamp-2">
+                        {match.description}
+                      </div>
+                      <div className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {match.timeAgo}
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => handleJoinMatch(match._id)}
+                      className="ml-2 flex-shrink-0 h-8 bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <UserPlus className="h-3 w-3 mr-1" />
+                      Join
+                    </Button>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
           
@@ -271,8 +351,15 @@ export default function PeerMatchingCard() {
                 <>
                   <Button 
                     disabled={!enabled}
+                    onClick={() => setShowOpenMatchDialog(true)}
+                    className="w-full h-11 rounded-2xl bg-gradient-to-br from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg shadow-green-600/20 transition-all hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-white flex items-center justify-center gap-2">
+                    <UserPlus className="h-4 w-4 text-white" />
+                    <span>Find Recovery Partner</span>
+                  </Button>
+                  <Button 
+                    disabled={!enabled}
                     onClick={handleFindMatch}
-                    className="w-full h-11 rounded-2xl bg-gradient-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20 transition-all hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-white flex items-center justify-center gap-2">
+                    className="w-full h-9 rounded-2xl bg-gradient-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20 transition-all hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-white flex items-center justify-center gap-2">
                     <Search className="h-4 w-4 text-white" />
                     <span>{t("find_peer")}</span>
                   </Button>
@@ -297,6 +384,78 @@ export default function PeerMatchingCard() {
           </div>
         </div>
       </CardContent>
+
+      {/* Open Match Dialog */}
+      <Dialog open={showOpenMatchDialog} onOpenChange={setShowOpenMatchDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-green-600" />
+              Create Open Recovery Match
+            </DialogTitle>
+            <DialogDescription>
+              Create an open chat where others can join. Describe what you're looking for help with.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Mood Selection */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">How are you feeling?</label>
+              <div className="grid grid-cols-2 gap-2">
+                {["Neutral", "Anxious", "Low", "Lonely"].map((mood) => (
+                  <button
+                    key={mood}
+                    onClick={() => setSelectedMood(mood.toLowerCase())}
+                    className={`flex items-center justify-center p-2.5 rounded-xl border-2 transition-all shadow-sm ${
+                      selectedMood === mood.toLowerCase()
+                        ? "border-primary bg-gradient-to-br from-primary/10 to-primary/5 shadow-primary/20"
+                        : "border-border bg-card hover:border-primary/30 hover:shadow-md"
+                    }`}
+                  >
+                    <span className="text-sm font-medium">{mood}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">What are you looking for help with?</label>
+              <Textarea
+                value={matchDescription}
+                onChange={(e) => setMatchDescription(e.target.value)}
+                placeholder="E.g., 'Need someone to talk to about anxiety', 'Looking for peer support during recovery', 'Want to chat with someone who understands'..."
+                className="min-h-[100px] resize-none"
+                maxLength={200}
+              />
+              <p className="text-xs text-muted-foreground">
+                {matchDescription.length}/200 characters
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowOpenMatchDialog(false)
+                setMatchDescription("")
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCreateOpenMatch}
+              disabled={!matchDescription.trim()}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              Create Open Match
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }

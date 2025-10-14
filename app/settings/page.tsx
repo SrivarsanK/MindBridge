@@ -344,8 +344,8 @@ export default function SettingsPage() {
             {/* Peer Matching */}
             <div className="flex items-start justify-between p-4 rounded-xl border-2 border-border bg-card/50 transition-all hover:border-primary/30">
               <div className="flex items-start gap-3 flex-1">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-500/5 flex items-center justify-center shrink-0">
-                  <Users className="h-5 w-5 text-purple-500" />
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center shrink-0">
+                  <Users className="h-5 w-5 text-primary" />
                 </div>
                 <div className="flex-1">
                   <Label htmlFor="peer-matching" className="text-sm font-medium cursor-pointer">

@@ -9,7 +9,8 @@ import {
   Settings, 
   Menu,
   X,
-  Shield
+  Shield,
+  Wind
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useLocale } from "@/components/locale-provider"
@@ -23,6 +24,12 @@ export default function NavigationSidebar() {
       href: "/dashboard",
       icon: Home,
       description: t("nav_dashboard_desc")
+    },
+    {
+      name: "Breathing Exercises",
+      href: "/breathing",
+      icon: Wind,
+      description: "Science-backed techniques for calm"
     },
     {
       name: t("peer_search"),
@@ -57,7 +64,7 @@ export default function NavigationSidebar() {
   }
 
   // Define pages where sidebar should be visible
-  const allowedPages = ['/dashboard', '/peer-search', '/professional-support', '/settings']
+  const allowedPages = ['/dashboard', '/breathing', '/peer-search', '/professional-support', '/settings']
   
   // Check if current page should show sidebar
   const shouldShowSidebar = allowedPages.some(page => pathname?.startsWith(page))

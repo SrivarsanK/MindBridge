@@ -57,6 +57,8 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
   const [showEndConfirm, setShowEndConfirm] = useState(false)
   const [optimisticMessages, setOptimisticMessages] = useState<DecryptedMessage[]>([])
   const [peerOnline, setPeerOnline] = useState(false)
+  const [initializationError, setInitializationError] = useState<string | null>(null)
+  const [retryCount, setRetryCount] = useState(0)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -78,6 +80,8 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
   useEffect(() => {
     async function initializeKeys() {
       try {
+        setInitializationError(null)
+        
         // Try to load existing keys from storage
         let storedIdentity = await KeyStorage.getIdentityKeyPair(matchId)
         let storedPreKey = await KeyStorage.getPreKeyPair(matchId)
@@ -85,6 +89,7 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
 
         // Generate new keys if not found
         if (!storedIdentity) {
+          console.log("📝 Generating new identity key pair...")
           const identityKP = await generateKeyPair()
           storedIdentity = {
             publicKey: await exportPublicKey(identityKP.publicKey),
@@ -95,6 +100,7 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
         }
 
         if (!storedPreKey) {
+          console.log("📝 Generating new pre-key pair...")
           const preKP = await generateKeyPair()
           storedPreKey = {
             publicKey: await exportPublicKey(preKP.publicKey),
@@ -110,6 +116,7 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
         // Upload public keys to server if new keys were generated
         if (needsUpload) {
           try {
+            console.log("📤 Uploading public keys to server...")
             await uploadPreKeys({
               identityPublicKey: storedIdentity.publicKey,
               signedPreKeyPublic: storedPreKey.publicKey,
@@ -118,31 +125,42 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
             })
             console.log("✅ Public keys uploaded to server")
           } catch (error) {
-            console.error("Failed to upload public keys:", error)
+            console.error("❌ Failed to upload public keys:", error)
+            throw new Error("Failed to upload encryption keys to server")
           }
         }
 
         // Derive shared secret when peer's pre-key bundle is available
         if (peerPreKeyBundle && storedIdentity) {
           try {
+            console.log("🔐 Deriving shared secret with peer...")
             const myPrivateKey = await importPrivateKey(storedIdentity.privateKey)
             const peerPublicKey = await importPublicKey(peerPreKeyBundle.identityKey)
             const sharedSecret = await deriveSharedSecret(myPrivateKey, peerPublicKey)
             setEncryptionKey(sharedSecret)
+            console.log("✅ Encryption established successfully")
           } catch (error) {
-            console.error("Failed to derive shared secret:", error)
+            console.error("❌ Failed to derive shared secret:", error)
+            throw new Error("Failed to establish encryption with peer")
           }
+        } else if (!peerPreKeyBundle && retryCount < 5) {
+          // Retry after a delay if peer's keys aren't available yet
+          console.log(`⏳ Waiting for peer's encryption keys... (attempt ${retryCount + 1}/5)`)
+          setTimeout(() => setRetryCount(prev => prev + 1), 2000)
+          return
         }
 
         setIsInitializing(false)
+        setInitializationError(null)
       } catch (error) {
-        console.error("Failed to initialize encryption keys:", error)
+        console.error("❌ Failed to initialize encryption keys:", error)
+        setInitializationError(error instanceof Error ? error.message : "Failed to initialize encryption")
         setIsInitializing(false)
       }
     }
 
     initializeKeys()
-  }, [matchId, peerPreKeyBundle, uploadPreKeys])
+  }, [matchId, peerPreKeyBundle, uploadPreKeys, retryCount])
 
   // Decrypt messages when encryption key is ready
   useEffect(() => {
@@ -346,7 +364,46 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
       <div className="flex flex-col items-center justify-center h-screen gap-4">
         <Shield className="h-12 w-12 text-primary animate-pulse" />
         <p className="text-lg font-medium">Initializing end-to-end encryption...</p>
-        <p className="text-sm text-muted-foreground">Generating secure keys</p>
+        <p className="text-sm text-muted-foreground">
+          {retryCount > 0 ? `Retrying connection... (${retryCount}/5)` : "Generating secure keys"}
+        </p>
+        {retryCount > 3 && (
+          <p className="text-xs text-yellow-600 dark:text-yellow-400">
+            Taking longer than expected. Your peer might be offline.
+          </p>
+        )}
+      </div>
+    )
+  }
+
+  if (initializationError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen gap-4 p-6">
+        <AlertTriangle className="h-12 w-12 text-destructive" />
+        <p className="text-lg font-medium text-center">Failed to Initialize Encryption</p>
+        <p className="text-sm text-muted-foreground text-center max-w-md">
+          {initializationError}
+        </p>
+        <div className="flex gap-3">
+          <Button
+            onClick={() => {
+              setIsInitializing(true)
+              setInitializationError(null)
+              setRetryCount(0)
+            }}
+            className="gap-2"
+          >
+            <Shield className="h-4 w-4" />
+            Retry Connection
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => router.push("/dashboard")}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+        </div>
       </div>
     )
   }
@@ -377,6 +434,23 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
                 <div className="flex items-center gap-1.5">
                   <Lock className="h-3 w-3 text-green-500" />
                   <span>End-to-end encrypted</span>
+                  {/* Connection Status Badge */}
+                  {isEncryptionReady ? (
+                    <Badge variant="default" className="ml-2 bg-green-500 hover:bg-green-600 text-white text-xs">
+                      <Check className="h-3 w-3 mr-1" />
+                      Connected
+                    </Badge>
+                  ) : optimisticMessages.length > 0 ? (
+                    <Badge variant="secondary" className="ml-2 bg-amber-500/20 text-amber-700 dark:text-amber-400 text-xs border-amber-500/30">
+                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                      Connecting ({optimisticMessages.length} queued)
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="ml-2 text-xs">
+                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                      Establishing...
+                    </Badge>
+                  )}
                 </div>
                 {peerOnline && (
                   <div className="flex items-center gap-1.5">
@@ -509,9 +583,17 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
       {/* Input */}
       <div className="border-t bg-card p-4">
         {!isEncryptionReady && (
-          <div className="mb-2 flex items-center gap-2 text-xs text-orange-600 dark:text-orange-400">
-            <Loader2 className="h-3 w-3 animate-spin" />
+          <div className="mb-2 flex items-center gap-2 text-xs text-orange-600 dark:text-orange-400 bg-orange-500/10 border border-orange-500/20 rounded-lg p-2">
+            <Loader2 className="h-3 w-3 animate-spin flex-shrink-0" />
             <span>Setting up encryption - messages will send automatically when ready</span>
+          </div>
+        )}
+        {optimisticMessages.length > 0 && (
+          <div className="mb-2 flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg p-2">
+            <Loader2 className="h-3 w-3 animate-spin flex-shrink-0" />
+            <span>
+              <strong>{optimisticMessages.length}</strong> {optimisticMessages.length === 1 ? "message" : "messages"} queued - establishing secure connection...
+            </span>
           </div>
         )}
         <div className="flex gap-2">

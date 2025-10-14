@@ -107,7 +107,7 @@ const applicationTables = {
   // Peer Matching System
   peerMatches: defineTable({
     user1Id: v.id("users"),
-    user2Id: v.id("users"),
+    user2Id: v.optional(v.id("users")), // Optional for pending matches waiting for someone to join
     matchScore: v.number(),
     matchCriteria: v.object({
       moodCompatibility: v.number(),
@@ -122,6 +122,7 @@ const applicationTables = {
       v.literal("reported"),
       v.literal("blocked")
     ),
+    description: v.optional(v.string()), // Description of what user is looking for help with
     iceBreaker: v.string(),
     createdAt: v.number(),
     lastActivityAt: v.number(),
