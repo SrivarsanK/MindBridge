@@ -72,6 +72,7 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
   const endChat = useMutation(api.peerMatching.endPeerMatch)
   const markAsDelivered = useMutation(api.peerMatching.markMessagesAsDelivered)
   const markAsSeen = useMutation(api.peerMatching.markMessagesAsSeen)
+  const uploadPreKeys = useMutation(api.peerMatching.uploadPreKeys)
 
   // Initialize encryption keys
   useEffect(() => {
@@ -80,6 +81,7 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
         // Try to load existing keys from storage
         let storedIdentity = await KeyStorage.getIdentityKeyPair(matchId)
         let storedPreKey = await KeyStorage.getPreKeyPair(matchId)
+        let needsUpload = false
 
         // Generate new keys if not found
         if (!storedIdentity) {
@@ -89,6 +91,7 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
             privateKey: await exportPrivateKey(identityKP.privateKey),
           }
           await KeyStorage.saveIdentityKeyPair(matchId, storedIdentity)
+          needsUpload = true
         }
 
         if (!storedPreKey) {
@@ -98,10 +101,26 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
             privateKey: await exportPrivateKey(preKP.privateKey),
           }
           await KeyStorage.savePreKeyPair(matchId, storedPreKey)
+          needsUpload = true
         }
 
         setIdentityKeyPair(storedIdentity)
         setPreKeyPair(storedPreKey)
+
+        // Upload public keys to server if new keys were generated
+        if (needsUpload) {
+          try {
+            await uploadPreKeys({
+              identityPublicKey: storedIdentity.publicKey,
+              signedPreKeyPublic: storedPreKey.publicKey,
+              preKeys: [storedPreKey.publicKey], // Single pre-key for simplicity
+              preKeySignature: storedPreKey.publicKey, // Simplified signature
+            })
+            console.log("✅ Public keys uploaded to server")
+          } catch (error) {
+            console.error("Failed to upload public keys:", error)
+          }
+        }
 
         // Derive shared secret when peer's pre-key bundle is available
         if (peerPreKeyBundle && storedIdentity) {
@@ -123,7 +142,7 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
     }
 
     initializeKeys()
-  }, [matchId, peerPreKeyBundle])
+  }, [matchId, peerPreKeyBundle, uploadPreKeys])
 
   // Decrypt messages when encryption key is ready
   useEffect(() => {
