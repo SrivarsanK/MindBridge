@@ -596,6 +596,224 @@ const applicationTables = {
     .index("by_professional_id", ["professionalId"])
     .index("by_user_id", ["userId"])
     .index("by_booking_id", ["bookingId"]),
+
+  // ============================================
+  // XP & GAMIFICATION SYSTEM
+  // ============================================
+
+  // User XP & Level Data
+  userXP: defineTable({
+    userId: v.id("users"),
+    totalXP: v.number(), // All-time XP earned
+    currentLevelXP: v.number(), // XP in current level
+    level: v.number(), // Current level (1-100+)
+    prestige: v.number(), // Prestige level (resets at max level)
+    
+    // Streaks
+    dailyStreak: v.number(), // Consecutive days
+    weeklyStreak: v.number(), // Consecutive weeks
+    longestDailyStreak: v.number(),
+    lastActivityDate: v.string(), // ISO date for streak tracking
+    lastStreakCheckDate: v.string(),
+    
+    // Activity Tracking
+    totalActions: v.number(), // Total interactions
+    todayActions: v.number(), // Today's interaction count
+    weeklyActions: v.number(),
+    monthlyActions: v.number(),
+    
+    // Bonus Multipliers
+    xpMultiplier: v.number(), // Temporary boost (e.g., 1.5x, 2x)
+    multiplierExpiresAt: v.optional(v.number()),
+    
+    // Milestones
+    milestonesReached: v.array(v.string()), // Array of milestone IDs
+    nextMilestone: v.optional(v.string()),
+    
+    // Statistics
+    totalBreathingSessions: v.number(),
+    totalChatMessages: v.number(),
+    totalPeerChats: v.number(),
+    totalCheckIns: v.number(),
+    totalArticlesRead: v.number(),
+    positiveAIResponses: v.number(),
+    
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    lastXPGainedAt: v.number(),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_level", ["level"])
+    .index("by_total_xp", ["totalXP"])
+    .index("by_daily_streak", ["dailyStreak"]),
+
+  // XP Transactions (History of XP gains)
+  xpTransactions: defineTable({
+    userId: v.id("users"),
+    amount: v.number(), // XP gained (or lost)
+    source: v.union(
+      v.literal("daily_checkin"),
+      v.literal("breathing_exercise"),
+      v.literal("ai_chat_positive"),
+      v.literal("ai_chat_message"),
+      v.literal("peer_chat_message"),
+      v.literal("peer_chat_session"),
+      v.literal("article_read"),
+      v.literal("dream_journal"),
+      v.literal("mood_log"),
+      v.literal("streak_bonus"),
+      v.literal("milestone_reward"),
+      v.literal("achievement_unlock"),
+      v.literal("daily_challenge"),
+      v.literal("referral"),
+      v.literal("profile_complete"),
+      v.literal("first_time_bonus"),
+      v.literal("random_bonus"),
+      v.literal("admin_grant")
+    ),
+    multiplier: v.number(), // Applied multiplier (default 1.0)
+    description: v.string(), // Human-readable description
+    metadata: v.optional(v.object({
+      activityId: v.optional(v.string()),
+      achievementId: v.optional(v.string()),
+      bonusReason: v.optional(v.string()),
+    })),
+    levelBefore: v.number(),
+    levelAfter: v.number(),
+    timestamp: v.number(),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_timestamp", ["timestamp"])
+    .index("by_source", ["source"]),
+
+  // Achievements & Badges
+  achievements: defineTable({
+    userId: v.id("users"),
+    achievementId: v.string(), // Unique achievement identifier
+    category: v.union(
+      v.literal("breathing"),
+      v.literal("chat"),
+      v.literal("peer_support"),
+      v.literal("streaks"),
+      v.literal("milestones"),
+      v.literal("exploration"),
+      v.literal("special")
+    ),
+    tier: v.union(
+      v.literal("bronze"),
+      v.literal("silver"),
+      v.literal("gold"),
+      v.literal("platinum"),
+      v.literal("diamond")
+    ),
+    title: v.string(),
+    description: v.string(),
+    icon: v.string(), // Emoji or icon name
+    xpReward: v.number(),
+    unlockedAt: v.number(),
+    progress: v.optional(v.number()), // For progressive achievements (0-100)
+    isSecret: v.boolean(), // Hidden until unlocked
+    rarity: v.union(
+      v.literal("common"),
+      v.literal("uncommon"),
+      v.literal("rare"),
+      v.literal("epic"),
+      v.literal("legendary")
+    ),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_category", ["category"])
+    .index("by_unlocked_at", ["unlockedAt"])
+    .index("by_achievement_id", ["achievementId"]),
+
+  // Daily Challenges
+  dailyChallenges: defineTable({
+    userId: v.id("users"),
+    challengeId: v.string(), // Daily rotating challenge
+    title: v.string(),
+    description: v.string(),
+    type: v.union(
+      v.literal("breathing"),
+      v.literal("chat"),
+      v.literal("peer"),
+      v.literal("mood"),
+      v.literal("streak"),
+      v.literal("explore")
+    ),
+    targetValue: v.number(), // Goal to reach
+    currentProgress: v.number(), // Current progress
+    xpReward: v.number(),
+    bonusXPReward: v.number(), // Extra XP for perfect completion
+    status: v.union(
+      v.literal("active"),
+      v.literal("completed"),
+      v.literal("expired")
+    ),
+    difficulty: v.union(
+      v.literal("easy"),
+      v.literal("medium"),
+      v.literal("hard")
+    ),
+    expiresAt: v.number(), // End of day timestamp
+    completedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_status", ["status"])
+    .index("by_expires_at", ["expiresAt"]),
+
+  // Leaderboards (Anonymous)
+  leaderboardEntries: defineTable({
+    userId: v.id("users"),
+    anonymousName: v.string(), // Generated anonymous name
+    avatar: v.string(), // Random avatar identifier
+    period: v.union(
+      v.literal("daily"),
+      v.literal("weekly"),
+      v.literal("monthly"),
+      v.literal("all_time")
+    ),
+    metric: v.union(
+      v.literal("total_xp"),
+      v.literal("level"),
+      v.literal("streak"),
+      v.literal("achievements")
+    ),
+    value: v.number(),
+    rank: v.number(),
+    lastUpdated: v.number(),
+  })
+    .index("by_period_and_metric", ["period", "metric"])
+    .index("by_rank", ["rank"])
+    .index("by_user_id", ["userId"]),
+
+  // XP Boosts & Power-ups
+  xpBoosts: defineTable({
+    userId: v.id("users"),
+    boostType: v.union(
+      v.literal("xp_multiplier"), // 2x, 3x XP
+      v.literal("streak_freeze"), // Protect streak
+      v.literal("instant_level"), // Gain instant level
+      v.literal("random_achievement"), // Unlock random achievement
+      v.literal("bonus_challenge") // Extra daily challenge
+    ),
+    multiplier: v.optional(v.number()), // For XP multipliers
+    duration: v.optional(v.number()), // Duration in seconds
+    isActive: v.boolean(),
+    activatedAt: v.optional(v.number()),
+    expiresAt: v.optional(v.number()),
+    source: v.union(
+      v.literal("earned"),
+      v.literal("purchased"),
+      v.literal("milestone"),
+      v.literal("gift")
+    ),
+    usedAt: v.optional(v.number()),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_is_active", ["isActive"])
+    .index("by_expires_at", ["expiresAt"]),
 };
 
 export default defineSchema({
