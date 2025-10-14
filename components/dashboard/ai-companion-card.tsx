@@ -43,11 +43,27 @@ export function AICompanionCard() {
         })
       });
 
-      const data = await response.json();
+      if (!response.ok) {
+        // Handle HTTP errors
+        let errorMsg = t("ai_error");
+        if (response.status === 504 || response.status === 503) {
+          errorMsg = t("ai_server_unavailable") || "AI server is temporarily unavailable. Please try again later.";
+        } else if (response.status === 429) {
+          errorMsg = t("ai_rate_limited") || "You are sending messages too quickly. Please wait and try again.";
+        }
+        throw new Error(errorMsg);
+      }
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonErr) {
+        throw new Error(t("ai_invalid_response") || "Received invalid response from server.");
+      }
       
       // Check if there's an error message
       if (data.error || !data.message) {
-        throw new Error(data.error || "No response from server");
+        throw new Error(data.error || t("ai_no_response") || "No response from server");
       }
       
       if (data.isCrisis) {
@@ -58,13 +74,20 @@ export function AICompanionCard() {
         ...prev,
         { role: "assistant", content: data.message }
       ]);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Chat error:", error);
+      let errorMsg = t("ai_error");
+      if (error instanceof TypeError) {
+        // Network error (e.g., server unreachable)
+        errorMsg = t("ai_network_error") || "Network error. Please check your connection and try again.";
+      } else if (error?.message) {
+        errorMsg = error.message;
+      }
       setMessages(prev => [
         ...prev,
         {
           role: "assistant",
-          content: t("ai_error")
+          content: errorMsg
         }
       ]);
     } finally {
