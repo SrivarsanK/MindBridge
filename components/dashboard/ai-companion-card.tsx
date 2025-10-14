@@ -34,14 +34,21 @@ export function AICompanionCard() {
     setIsTyping(true);
 
     try {
+      // Create an AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 35000); // 35 second timeout
+
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: [...messages, userMessage],
           locale: locale // Pass current locale to API
-        })
+        }),
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         // Handle HTTP errors
@@ -66,6 +73,11 @@ export function AICompanionCard() {
         throw new Error(data.error || t("ai_no_response") || "No response from server");
       }
       
+      // Check if response is too short or seems incomplete
+      if (data.message && data.message.trim().length < 10) {
+        console.warn("Received very short response:", data.message);
+      }
+      
       if (data.isCrisis) {
         setShowCrisisAlert(true);
       }
@@ -77,12 +89,17 @@ export function AICompanionCard() {
     } catch (error: any) {
       console.error("Chat error:", error);
       let errorMsg = t("ai_error");
-      if (error instanceof TypeError) {
+      
+      if (error.name === 'AbortError') {
+        // Request was aborted due to timeout
+        errorMsg = t("ai_timeout") || "The request took too long. Please try again with a shorter message.";
+      } else if (error instanceof TypeError && error.message.includes('fetch')) {
         // Network error (e.g., server unreachable)
         errorMsg = t("ai_network_error") || "Network error. Please check your connection and try again.";
       } else if (error?.message) {
         errorMsg = error.message;
       }
+      
       setMessages(prev => [
         ...prev,
         {
