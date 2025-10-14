@@ -382,7 +382,7 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
         {matchDetails.iceBreaker && (
           <Card className="mt-3 bg-primary/5 border-primary/20">
             <CardContent className="py-2 px-3">
-              <p className="text-sm">
+              <p className="text-sm break-words">
                 <span className="font-medium">Ice Breaker: </span>
                 {matchDetails.iceBreaker}
               </p>
