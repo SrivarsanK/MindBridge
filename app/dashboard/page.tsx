@@ -9,7 +9,7 @@ import { MoodIndicator } from "@/components/mood-indicator"
 import { XPBar } from "@/components/xp/XPBar"
 import { useLocale } from "@/components/locale-provider"
 import { Sparkles, TrendingUp, Trophy } from "lucide-react"
-import { useQuery } from "convex/react"
+import { useQuery, useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { useAuthActions } from "@convex-dev/auth/react"
 import { useEffect } from "react"
@@ -26,28 +26,23 @@ export default function DashboardPage() {
   const streakData = useQuery(api.analytics.getStreak, { timezone })
   const insightsCount = useQuery(api.analytics.getInsightsCount)
   
-  // TODO: XP system - Uncomment when convex/xp.ts is added to API
-  // const xpData = useQuery(
-  //   api.xp.getUserXP,
-  //   currentUser ? { userId: currentUser._id } : "skip"
-  // )
+  // Real XP data from Convex backend
+  const xpData = useQuery(
+    api.xp.getUserXP,
+    currentUser ? { userId: currentUser._id } : "skip"
+  )
   
-  // Mock XP data for now - remove when backend is ready
-  const xpData = currentUser ? {
-    level: 5,
-    totalXP: 2450,
-    currentLevelXP: 450,
-    xpForNextLevel: 1000,
-    progressPercent: 45,
-    dailyStreak: 7,
-    weeklyStreak: 3,
-    longestDailyStreak: 12,
-    totalActions: 156,
-    todayActions: 8,
-    totalBreathingSessions: 42,
-    totalChatMessages: 89,
-    totalCheckIns: 25,
-  } : null
+  // Initialize XP for new users
+  const initializeXP = useMutation(api.xp.initializeUserXP)
+  
+  // Initialize XP if user doesn't have XP data yet
+  useEffect(() => {
+    if (currentUser && xpData === null) {
+      initializeXP({ userId: currentUser._id }).catch((error) => {
+        console.error("Failed to initialize XP:", error)
+      })
+    }
+  }, [currentUser, xpData, initializeXP])
 
   // Auto sign-in anonymous users
   useEffect(() => {

@@ -57,7 +57,7 @@ export const registerProfessional = mutation({
     // Check if professional profile already exists
     const existingProfessional = await ctx.db
       .query("professionals")
-      .withIndex("by_user_id", (q) => q.eq("userId", identity.subject))
+      .withIndex("by_user_id", (q) => q.eq("userId", identity.subject as Id<"users">))
       .first();
 
     if (existingProfessional) {
@@ -183,7 +183,7 @@ export const getProfessionalByUserId = query({
 
     const professional = await ctx.db
       .query("professionals")
-      .withIndex("by_user_id", (q) => q.eq("userId", identity.subject))
+      .withIndex("by_user_id", (q) => q.eq("userId", identity.subject as Id<"users">))
       .first();
 
     return professional;
