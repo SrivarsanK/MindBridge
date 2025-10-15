@@ -16,6 +16,7 @@ import { ClerkUserButton } from "@/components/clerk-user-button"
 import { ClerkAuthButtons } from "@/components/clerk-auth-buttons"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { LogoWithBackground } from "@/components/ui/logo-with-background"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -48,6 +49,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <ClerkProvider>
       <html lang="en" className={inter.variable} suppressHydrationWarning>
         <head>
+          <link rel="icon" href="/favicon.png" type="image/png" />
           <script
             dangerouslySetInnerHTML={{
               __html: `
@@ -110,11 +112,14 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                       <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
                         <a
                           href="/"
-                          className="inline-flex items-baseline gap-1 font-semibold tracking-tight text-foreground text-lg"
+                          className="inline-flex items-center gap-2 font-semibold tracking-tight text-foreground text-lg hover:opacity-80 transition-opacity"
                           aria-label="MindBridge Home"
                         >
-                          <span>Mind</span>
-                          <span className="text-primary">Bridge</span>
+                          <LogoWithBackground size="sm" />
+                          <span className="flex items-baseline gap-1">
+                            <span>Mind</span>
+                            <span className="text-primary">Bridge</span>
+                          </span>
                         </a>
                         {/* Right side navigation */}
                         <div className="flex items-center gap-3">

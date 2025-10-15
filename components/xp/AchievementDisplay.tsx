@@ -309,7 +309,7 @@ export function AchievementUnlockModal({
             {/* Close Button */}
             <button
               onClick={onClose}
-              className="w-full px-6 py-3 bg-white text-gray-900 font-semibold rounded-lg hover:bg-white/90 transition-colors"
+              className="w-full px-6 py-3 bg-white text-gray-900 font-semibold rounded-lg hover:bg-white/90 transition-colors dark:bg-white/10 dark:text-white dark:hover:bg-white/20 dark:border dark:border-white/20"
             >
               Awesome!
             </button>

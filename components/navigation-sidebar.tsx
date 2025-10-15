@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useLocale } from "@/components/locale-provider"
+import { LogoWithBackground } from "@/components/ui/logo-with-background"
 
 export default function NavigationSidebar() {
   const { t } = useLocale()
@@ -110,6 +111,26 @@ export default function NavigationSidebar() {
         )}
       >
         <div className="flex flex-col h-full">
+          {/* Logo Section */}
+          <div className={cn(
+            "p-4 border-b flex items-center gap-3 transition-all",
+            isCollapsed ? "justify-center" : ""
+          )}>
+            <LogoWithBackground 
+              size={isCollapsed ? "md" : "sm"}
+              className="transition-all"
+            />
+            {!isCollapsed && (
+              <div className="flex flex-col">
+                <span className="font-bold text-base flex items-baseline gap-1">
+                  <span>Mind</span>
+                  <span className="text-primary">Bridge</span>
+                </span>
+                <span className="text-xs text-muted-foreground">Mental Wellness</span>
+              </div>
+            )}
+          </div>
+          
           {/* Navigation Items */}
           <nav className="flex-1 overflow-y-auto p-4 space-y-2 min-h-0">
             {/* Desktop Collapse Toggle Button */}

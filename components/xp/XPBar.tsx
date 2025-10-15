@@ -114,13 +114,9 @@ export function XPBar({
         </motion.div>
 
         {/* Milestone Markers (every 25%) */}
-        {[25, 50, 75].map((milestone) => (
-          <div
-            key={milestone}
-            className="absolute top-0 bottom-0 w-px bg-background/30"
-            style={{ left: `${milestone}%` }}
-          />
-        ))}
+        <div className="absolute top-0 bottom-0 w-px bg-background/30 left-[25%]" />
+        <div className="absolute top-0 bottom-0 w-px bg-background/30 left-1/2" />
+        <div className="absolute top-0 bottom-0 w-px bg-background/30 left-[75%]" />
       </div>
 
       {/* Total XP Badge */}

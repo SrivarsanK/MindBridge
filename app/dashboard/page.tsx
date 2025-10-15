@@ -6,8 +6,9 @@ import DailyCheckinCard from "@/components/dashboard/daily-checkin-card"
 import MicroInterventionsCard from "@/components/dashboard/micro-interventions-card"
 import InsightsCard from "@/components/dashboard/insights-card"
 import { MoodIndicator } from "@/components/mood-indicator"
+import { XPBar } from "@/components/xp/XPBar"
 import { useLocale } from "@/components/locale-provider"
-import { Sparkles, TrendingUp } from "lucide-react"
+import { Sparkles, TrendingUp, Trophy } from "lucide-react"
 import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { useAuthActions } from "@convex-dev/auth/react"
@@ -24,6 +25,29 @@ export default function DashboardPage() {
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
   const streakData = useQuery(api.analytics.getStreak, { timezone })
   const insightsCount = useQuery(api.analytics.getInsightsCount)
+  
+  // TODO: XP system - Uncomment when convex/xp.ts is added to API
+  // const xpData = useQuery(
+  //   api.xp.getUserXP,
+  //   currentUser ? { userId: currentUser._id } : "skip"
+  // )
+  
+  // Mock XP data for now - remove when backend is ready
+  const xpData = currentUser ? {
+    level: 5,
+    totalXP: 2450,
+    currentLevelXP: 450,
+    xpForNextLevel: 1000,
+    progressPercent: 45,
+    dailyStreak: 7,
+    weeklyStreak: 3,
+    longestDailyStreak: 12,
+    totalActions: 156,
+    todayActions: 8,
+    totalBreathingSessions: 42,
+    totalChatMessages: 89,
+    totalCheckIns: 25,
+  } : null
 
   // Auto sign-in anonymous users
   useEffect(() => {
@@ -71,6 +95,33 @@ export default function DashboardPage() {
           
           {/* Stats Bar */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-4">
+            {/* XP Progress Card */}
+            {xpData && (
+              <div className="sm:col-span-2 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent backdrop-blur-sm border border-primary/20 rounded-2xl p-4 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-md">
+                    <Trophy className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-semibold">Your Progress</h3>
+                      <span className="text-xs text-muted-foreground">
+                        {xpData.totalXP.toLocaleString()} Total XP
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <XPBar
+                  currentXP={xpData.currentLevelXP}
+                  xpForNextLevel={xpData.xpForNextLevel}
+                  level={xpData.level}
+                  totalXP={xpData.totalXP}
+                  showDetails={true}
+                  animated={true}
+                />
+              </div>
+            )}
+            
             <div className="bg-card/50 backdrop-blur-sm border rounded-2xl p-3 hover:bg-card/80 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
               <div className="flex items-center gap-2 text-accent mb-1">
                 <TrendingUp className="h-4 w-4 shrink-0" />

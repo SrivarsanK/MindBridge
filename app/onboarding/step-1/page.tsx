@@ -5,6 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { useState } from "react"
 import { Shield, Brain, AlertCircle, CheckCircle2, ArrowRight, ArrowLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { LogoWithBackground } from "@/components/ui/logo-with-background"
 
 export default function Step1() {
   const [consent, setConsent] = useState(false)
@@ -66,6 +67,11 @@ export default function Step1() {
           
           <div className="relative bg-card border border-primary/10 rounded-3xl p-8 md:p-12 shadow-2xl">
             <div className="mb-8">
+              {/* Logo */}
+              <div className="flex justify-center mb-6">
+                <LogoWithBackground size="lg" />
+              </div>
+              
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border bg-primary/5 text-primary text-sm font-medium mb-4">
                 <Shield className="h-4 w-4" />
                 <span>Privacy & Consent</span>

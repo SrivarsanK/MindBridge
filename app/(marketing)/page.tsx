@@ -236,19 +236,19 @@ export default function Page() {
 
       {/* CTA Section */}
       <section className="mx-auto max-w-7xl px-4 py-16 md:py-24">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-primary/80 p-12 md:p-16 text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1),transparent_70%)]" />
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-primary/80 dark:from-primary/40 dark:to-primary/30 p-12 md:p-16 text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1),transparent_70%)] dark:bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.06),transparent_70%)]" />
           <div className="relative z-10 max-w-2xl mx-auto space-y-6">
             <h2 className="text-3xl md:text-4xl font-bold text-white">
               {t("cta_wellness_title")}
             </h2>
-            <p className="text-lg text-primary-foreground/90">
+            <p className="text-lg text-primary-foreground/90 dark:text-white/90">
               {t("cta_wellness_subtitle")}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               {/* Show Dashboard when signed in, Sign Up when signed out */}
               <SignedIn>
-                <Button asChild size="lg" variant="secondary" className="h-12 px-8 bg-white text-primary hover:bg-white/90 shadow-lg">
+                <Button asChild size="lg" variant="secondary" className="h-12 px-8 bg-white text-primary hover:bg-white/90 shadow-lg dark:bg-white/10 dark:text-white dark:hover:bg-white/20 dark:border dark:border-white/20">
                   <Link href="/dashboard" className="flex items-center gap-2">
                     {t("go_to_dashboard")}
                     <ArrowRight className="h-4 w-4" />
@@ -258,7 +258,7 @@ export default function Page() {
               
               <SignedOut>
                 <SignUpButton mode="modal" forceRedirectUrl="/onboarding/step-1">
-                  <Button size="lg" variant="secondary" className="h-12 px-8 bg-white text-primary hover:bg-white/90 shadow-lg">
+                  <Button size="lg" variant="secondary" className="h-12 px-8 bg-white text-primary hover:bg-white/90 shadow-lg dark:bg-white/10 dark:text-white dark:hover:bg-white/20 dark:border dark:border-white/20">
                     Get Started Free
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>

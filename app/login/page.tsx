@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { SignInButton, SignUpButton } from "@clerk/nextjs"
 import { Shield, Lock, Heart, Sparkles } from "lucide-react"
+import { LogoWithBackground } from "@/components/ui/logo-with-background"
 
 export default function LoginPage() {
   return (
@@ -15,6 +16,11 @@ export default function LoginPage() {
           <div className="relative bg-card border border-primary/10 rounded-3xl p-8 md:p-12 shadow-2xl">
             {/* Header */}
             <div className="text-center mb-8">
+              {/* Logo */}
+              <div className="flex justify-center mb-4">
+                <LogoWithBackground size="lg" />
+              </div>
+              
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border bg-primary/5 text-primary text-sm font-medium mb-4">
                 <Sparkles className="h-4 w-4" />
                 <span>Privacy-First</span>
