@@ -12,8 +12,7 @@ import { ClerkProvider, SignedIn, SignedOut } from "@clerk/nextjs"
 import { ConvexClientProvider } from "@/components/convex-client-provider"
 import NavigationSidebar from "@/components/navigation-sidebar"
 import { BGPattern } from "@/components/ui/bg-pattern"
-import { ClerkUserButton } from "@/components/clerk-user-button"
-import { ClerkAuthButtons } from "@/components/clerk-auth-buttons"
+import { AuthSection } from "@/components/auth-section"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { LogoWithBackground } from "@/components/ui/logo-with-background"
@@ -42,11 +41,12 @@ export const metadata: Metadata = {
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const hasClerkKeys = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && 
-    !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.includes('your_')
-
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      appearance={{
+        cssLayerName: 'clerk',
+      }}
+    >
       <html lang="en" className={inter.variable} suppressHydrationWarning>
         <head>
           <link rel="icon" href="/favicon.png" type="image/png" />
@@ -108,7 +108,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 <MoodProvider>
                   <div className="min-h-dvh flex flex-col">
                     {/* Site header */}
-                    <header className="w-full border-b bg-background/80 backdrop-blur-sm">
+                    <header className="w-full glass sticky top-0 z-50">
                       <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
                         <a
                           href="/"
@@ -116,7 +116,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                           aria-label="MindBridge Home"
                         >
                           <LogoWithBackground size="sm" />
-                          <span className="flex items-baseline gap-1">
+                          <span className="flex items-center gap-1">
                             <span>Mind</span>
                             <span className="text-primary">Bridge</span>
                           </span>
@@ -127,27 +127,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                             <LocaleSwitcher />
                           </nav>
                           <ThemeToggle />
-                          {hasClerkKeys ? (
-                            <>
-                              {/* Show user button when signed in */}
-                              <SignedIn>
-                                <ClerkUserButton />
-                              </SignedIn>
-                              {/* Show sign in/up buttons when signed out */}
-                              <SignedOut>
-                                <ClerkAuthButtons />
-                              </SignedOut>
-                            </>
-                          ) : (
-                            <>
-                              <a href="/login" className="text-sm font-medium text-primary hover:underline transition-colors">
-                                Sign In
-                              </a>
-                              <a href="/login" className="bg-primary text-white rounded-full font-medium text-sm h-9 px-5 flex items-center hover:bg-primary/90 transition-all shadow-sm hover:shadow-md">
-                                Sign Up
-                              </a>
-                            </>
-                          )}
+                          <AuthSection />
                         </div>
                       </div>
                     </header>

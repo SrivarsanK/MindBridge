@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { useLocale } from "@/components/locale-provider"
+import { BookingDialog } from "@/components/booking/booking-dialog"
 import {
   UserCircle,
   Calendar,
@@ -101,6 +102,13 @@ export default function ProfessionalSupportPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedSpecialization, setSelectedSpecialization] = useState<string | null>(null)
   const [selectedMode, setSelectedMode] = useState<string | null>(null)
+  const [bookingDialogOpen, setBookingDialogOpen] = useState(false)
+  const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null)
+
+  const handleBookSession = (professional: Professional) => {
+    setSelectedProfessional(professional)
+    setBookingDialogOpen(true)
+  }
 
   const specializations = [
     "Anxiety",
@@ -337,7 +345,11 @@ export default function ProfessionalSupportPage() {
 
                 {/* Action Buttons */}
                 <div className="flex gap-2 pt-2">
-                  <Button className="flex-1 h-9 text-sm" size="sm">
+                  <Button 
+                    className="flex-1 h-9 text-sm" 
+                    size="sm"
+                    onClick={() => handleBookSession(prof)}
+                  >
                     <Calendar className="h-3 w-3 mr-1.5" />
                     {t("book_session") || "Book Session"}
                   </Button>
@@ -427,6 +439,15 @@ export default function ProfessionalSupportPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Booking Dialog */}
+      {selectedProfessional && (
+        <BookingDialog
+          open={bookingDialogOpen}
+          onOpenChange={setBookingDialogOpen}
+          professional={selectedProfessional}
+        />
+      )}
     </div>
   )
 }

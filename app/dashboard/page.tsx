@@ -5,6 +5,7 @@ import PeerMatchingCard from "@/components/dashboard/peer-matching-card"
 import DailyCheckinCard from "@/components/dashboard/daily-checkin-card"
 import MicroInterventionsCard from "@/components/dashboard/micro-interventions-card"
 import InsightsCard from "@/components/dashboard/insights-card"
+import { PersonalizationSettingsCard } from "@/components/dashboard/personalization-settings-card"
 import { MoodIndicator } from "@/components/mood-indicator"
 import { XPBar } from "@/components/xp/XPBar"
 import { useLocale } from "@/components/locale-provider"
@@ -80,11 +81,11 @@ export default function DashboardPage() {
             <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20 shrink-0">
               <Sparkles className="h-5 w-5 text-white" />
             </div>
-            <div className="flex-1 min-w-0 overflow-hidden">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent break-words">
+            <div className="flex-1 min-w-0 overflow-hidden flex flex-col justify-center">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent leading-tight">
                 {welcomeMessage.title}
               </h1>
-              <p className="text-xs text-muted-foreground mt-0.5 break-words">{welcomeMessage.subtitle}</p>
+              <p className="text-xs text-muted-foreground mt-0.5 break-words leading-relaxed">{welcomeMessage.subtitle}</p>
             </div>
           </div>
           
@@ -151,7 +152,7 @@ export default function DashboardPage() {
           {/* Right Column - Quick Actions */}
           <div className="lg:col-span-4 grid gap-4 content-start mood-adaptive-grid min-w-0">
             <div className="animate-in fade-in slide-in-from-right-4 duration-700 delay-75 min-w-0">
-              <MoodIndicator />
+              <MoodIndicator interactive={true} />
             </div>
             <div className="animate-in fade-in slide-in-from-right-4 duration-700 delay-100 min-w-0">
               <DailyCheckinCard />
@@ -164,6 +165,9 @@ export default function DashboardPage() {
             </div>
             <div className="animate-in fade-in slide-in-from-right-4 duration-700 delay-300 min-w-0">
               <PeerMatchingCard />
+            </div>
+            <div className="animate-in fade-in slide-in-from-right-4 duration-700 delay-400 min-w-0">
+              <PersonalizationSettingsCard />
             </div>
           </div>
         </div>

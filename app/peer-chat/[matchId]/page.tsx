@@ -18,6 +18,7 @@ import {
   Check,
   X as XIcon,
   Loader2,
+  Smile,
 } from "lucide-react"
 import {
   generateKeyPair,
@@ -31,6 +32,12 @@ import {
   KeyStorage,
   type SerializedKeyPair,
 } from "@/lib/crypto"
+import {
+  moderateContent,
+  getViolationMessage,
+  requiresImmediateReview,
+  type ModerationResult,
+} from "@/lib/moderation"
 
 interface DecryptedMessage {
   _id: string
@@ -59,8 +66,10 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
   const [peerOnline, setPeerOnline] = useState(false)
   const [initializationError, setInitializationError] = useState<string | null>(null)
   const [retryCount, setRetryCount] = useState(0)
+  const [moderationWarning, setModerationWarning] = useState<string | null>(null)
+  const [isMessageBlocked, setIsMessageBlocked] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   const matchId = matchIdString as Id<"peerMatches">
   const matchDetails = useQuery(api.peerMatching.getMatchDetails, { matchId })
@@ -283,6 +292,41 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
     if (!messageInput.trim() || isEncrypting) return
 
     const messageText = messageInput.trim()
+    
+    // ========== CONTENT MODERATION ==========
+    // Run moderation check BEFORE sending
+    const moderationResult = moderateContent(messageText)
+    
+    // Clear previous warnings
+    setModerationWarning(null)
+    setIsMessageBlocked(false)
+    
+    // If message is blocked, show warning and don't send
+    if (!moderationResult.allowed) {
+      const warningMessage = getViolationMessage(moderationResult)
+      setModerationWarning(warningMessage)
+      setIsMessageBlocked(true)
+      
+      // Auto-clear warning after 5 seconds
+      setTimeout(() => {
+        setModerationWarning(null)
+        setIsMessageBlocked(false)
+      }, 5000)
+      
+      console.warn('🚫 Message blocked by moderation:', moderationResult)
+      return
+    }
+    
+    // If message has low-severity violations, show warning but allow sending
+    if (moderationResult.violations.length > 0) {
+      const warningMessage = getViolationMessage(moderationResult)
+      setModerationWarning(warningMessage)
+      
+      // Auto-clear warning after 4 seconds
+      setTimeout(() => setModerationWarning(null), 4000)
+    }
+    // ========================================
+    
     const tempTimestamp = Date.now()
     
     // Add optimistic message immediately for instant feedback
@@ -413,168 +457,175 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
   const isEncryptionReady = !!encryptionKey
 
   return (
-    <div className="flex flex-col h-screen max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="border-b bg-card p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => router.push("/dashboard")}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 className="text-xl font-semibold flex items-center gap-2">
-                <MessageCircle className="h-5 w-5" />
+    <div className="flex flex-col h-screen max-w-2xl mx-auto bg-transparent">
+      {/* Header - Glassmorphism Style */}
+      <div className="backdrop-blur-xl bg-[color-mix(in_srgb,var(--background)_70%,transparent)] border-b border-[color-mix(in_srgb,var(--border)_50%,transparent)] px-4 py-3 flex items-center justify-between shadow-[0_4px_16px_0_color-mix(in_srgb,var(--foreground)_5%,transparent)]">
+        <div className="flex items-center gap-4 flex-1 min-w-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push("/dashboard")}
+            className="text-[var(--foreground)] hover:bg-[color-mix(in_srgb,var(--accent)_20%,transparent)] flex-shrink-0"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+
+          {/* Profile Avatar & Info */}
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0">
+              <span className="text-white font-semibold text-sm">
+                {matchDetails.peerDisplayName?.charAt(0).toUpperCase() || '?'}
+              </span>
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <h1 className="text-[var(--foreground)] text-lg font-medium truncate">
                 {matchDetails.peerDisplayName}
               </h1>
-              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 text-sm">
                 <div className="flex items-center gap-1.5">
-                  <Lock className="h-3 w-3 text-green-500" />
-                  <span>End-to-end encrypted</span>
-                  {/* Connection Status Badge */}
-                  {isEncryptionReady ? (
-                    <Badge variant="default" className="ml-2 bg-green-500 hover:bg-green-600 text-white text-xs">
-                      <Check className="h-3 w-3 mr-1" />
-                      Connected
-                    </Badge>
-                  ) : optimisticMessages.length > 0 ? (
-                    <Badge variant="secondary" className="ml-2 bg-amber-500/20 text-amber-700 dark:text-amber-400 text-xs border-amber-500/30">
-                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                      Connecting ({optimisticMessages.length} queued)
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary" className="ml-2 text-xs">
-                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                      Establishing...
-                    </Badge>
-                  )}
+                  <Lock className="h-3 w-3 text-[#00a884]" />
+                  <span className="text-[var(--muted-foreground)]">Encrypted</span>
                 </div>
                 {peerOnline && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-green-600 dark:text-green-400 font-medium">Online</span>
-                  </div>
+                  <>
+                    <span className="text-[var(--muted-foreground)]">•</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-full bg-[#00a884] animate-pulse" />
+                      <span className="text-[#00a884] font-medium">Online</span>
+                    </div>
+                  </>
+                )}
+                {/* Connection Status */}
+                <span className="text-[var(--muted-foreground)]">•</span>
+                {isEncryptionReady ? (
+                  <span className="text-[#00a884] text-xs">✓ Connected</span>
+                ) : optimisticMessages.length > 0 ? (
+                  <span className="text-[#ffa500] text-xs">⏳ {optimisticMessages.length} queued</span>
+                ) : (
+                  <span className="text-[#8696a0] text-xs">Setting up...</span>
                 )}
               </div>
             </div>
           </div>
-
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => setShowEndConfirm(true)}
-          >
-            End Chat
-          </Button>
         </div>
 
-        {/* Ice Breaker */}
-        {matchDetails.iceBreaker && (
-          <Card className="mt-3 bg-primary/5 border-primary/20">
-            <CardContent className="py-2 px-3">
-              <p className="text-sm break-words">
-                <span className="font-medium">Ice Breaker: </span>
-                {matchDetails.iceBreaker}
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Security Notice */}
-        <div className="mt-3 flex items-start gap-2 text-xs text-muted-foreground bg-green-500/10 border border-green-500/20 rounded-lg p-2">
-          <Shield className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-medium text-green-700 dark:text-green-400">
-              {isEncryptionReady ? "Secure Connection" : "Setting up encryption..."}
-            </p>
-            <p>
-              {isEncryptionReady
-                ? "Messages are encrypted on your device and can only be read by you and your peer. Even the server cannot decrypt your messages."
-                : "Establishing secure encryption. You can start typing - messages will be sent when encryption is ready."}
-            </p>
-          </div>
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowEndConfirm(true)}
+          className="text-[#aebac1] hover:bg-[#2a3942] px-3"
+        >
+          End Chat
+        </Button>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      {/* Messages - Glassmorphism Style */}
+      <div className="flex-1 overflow-y-auto backdrop-blur-sm bg-[color-mix(in_srgb,var(--background)_30%,transparent)] px-6 py-4">
         {(() => {
           // Combine optimistic and decrypted messages, sort by timestamp
           const allMessages = [...decryptedMessages, ...optimisticMessages]
             .sort((a, b) => a.timestamp - b.timestamp)
-          
+
           return allMessages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
-              <MessageCircle className="h-12 w-12 mb-3 opacity-50" />
-              <p className="text-lg font-medium">No messages yet</p>
-              <p className="text-sm">Start the conversation with your peer!</p>
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <MessageCircle className="h-16 w-16 mb-4 text-[var(--muted-foreground)] opacity-50" />
+              <p className="text-[var(--foreground)] text-xl font-medium mb-2">No messages yet</p>
+              <p className="text-[var(--muted-foreground)] text-sm">Start the conversation with your peer!</p>
             </div>
           ) : (
-            allMessages.map((msg) => {
-              const isOptimistic = msg._id.startsWith('temp-')
-              
-              return (
-                <div
-                  key={msg._id}
-                  className={`flex ${msg.isMine ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`max-w-[70%] rounded-lg px-4 py-2 ${
-                      msg.isMine
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
-                    } ${msg.decryptionFailed ? "border-2 border-red-500" : ""} ${
-                      isOptimistic ? "opacity-80" : ""
-                    }`}
-                  >
-                    {msg.decryptionFailed && (
-                      <div className="flex items-center gap-1 text-xs text-red-500 mb-1">
-                        <AlertTriangle className="h-3 w-3" />
-                        <span>Decryption failed</span>
+            <div className="space-y-1">
+              {allMessages.map((msg, index) => {
+                const isOptimistic = msg._id.startsWith('temp-')
+                const showTimestamp = index === 0 ||
+                  (allMessages[index - 1] &&
+                   new Date(msg.timestamp).toDateString() !== new Date(allMessages[index - 1].timestamp).toDateString())
+
+                return (
+                  <div key={msg._id}>
+                    {showTimestamp && (
+                      <div className="flex justify-center my-4">
+                        <span className="backdrop-blur-sm bg-[color-mix(in_srgb,var(--muted)_60%,transparent)] text-[var(--muted-foreground)] text-xs px-3 py-1 rounded-full border border-[color-mix(in_srgb,var(--border)_30%,transparent)]">
+                          {new Date(msg.timestamp).toLocaleDateString([], {
+                            weekday: 'long',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </span>
                       </div>
                     )}
-                    <p className="text-sm whitespace-pre-wrap break-words">{msg.plaintext}</p>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <p className="text-xs opacity-70">
-                        {new Date(msg.timestamp).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
-                      {msg.isMine && isOptimistic && (
-                        <Loader2 className="h-3 w-3 animate-spin opacity-50" />
-                      )}
-                      {msg.isMine && !isOptimistic && msg.deliveryStatus && (
-                        <span className="flex items-center" title={
-                          msg.deliveryStatus === "sent" ? "Sent" :
-                          msg.deliveryStatus === "delivered" ? "Delivered" :
-                          "Seen"
-                        }>
-                          {msg.deliveryStatus === "sent" && (
-                            <Check className="h-3 w-3 opacity-50" />
-                          )}
-                          {msg.deliveryStatus === "delivered" && (
-                            <div className="relative">
-                              <Check className="h-3 w-3 opacity-70" />
-                              <Check className="h-3 w-3 opacity-70 absolute -left-1" />
+
+                    <div className={`flex mb-1 ${msg.isMine ? "justify-end" : "justify-start"}`}>
+                      <div className={`max-w-[65%] min-w-0 ${msg.isMine ? "order-2" : "order-1"}`}>
+                        <div
+                          className={`relative px-4 py-2 rounded-2xl shadow-sm backdrop-blur-sm ${
+                            msg.isMine
+                              ? "bg-[color-mix(in_srgb,var(--primary)_80%,transparent)] text-[var(--primary-foreground)] rounded-br-md border border-[color-mix(in_srgb,var(--primary)_30%,transparent)]"
+                              : "bg-[color-mix(in_srgb,var(--muted)_70%,transparent)] text-[var(--foreground)] rounded-bl-md border border-[color-mix(in_srgb,var(--border)_40%,transparent)]"
+                          } ${msg.decryptionFailed ? "border-2 border-red-500" : ""} ${
+                            isOptimistic ? "opacity-80" : ""
+                          }`}
+                        >
+                          {msg.decryptionFailed && (
+                            <div className="flex items-center gap-1 text-xs text-red-400 mb-1">
+                              <AlertTriangle className="h-3 w-3" />
+                              <span>Decryption failed</span>
                             </div>
                           )}
-                          {msg.deliveryStatus === "read" && (
-                            <div className="relative text-blue-400">
-                              <Check className="h-3 w-3" />
-                              <Check className="h-3 w-3 absolute -left-1" />
-                            </div>
-                          )}
-                        </span>
-                      )}
+
+                          <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                            {msg.plaintext}
+                          </p>
+
+                          <div className={`flex items-center justify-end gap-1 mt-1 ${
+                            msg.isMine ? "flex-row-reverse" : ""
+                          }`}>
+                            <span className={`text-xs ${
+                              msg.isMine ? "text-[var(--muted-foreground)]" : "text-[var(--muted-foreground)]"
+                            }`}>
+                              {new Date(msg.timestamp).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+
+                            {msg.isMine && (
+                              <div className="flex items-center ml-1">
+                                {isOptimistic ? (
+                                  <Loader2 className="h-3 w-3 animate-spin text-[var(--muted-foreground)]" />
+                                ) : msg.deliveryStatus ? (
+                                  <span className="flex items-center" title={
+                                    msg.deliveryStatus === "sent" ? "Sent" :
+                                    msg.deliveryStatus === "delivered" ? "Delivered" :
+                                    "Read"
+                                  }>
+                                    {msg.deliveryStatus === "sent" && (
+                                      <Check className="h-3 w-3 text-[var(--muted-foreground)]" />
+                                    )}
+                                    {msg.deliveryStatus === "delivered" && (
+                                      <div className="relative">
+                                        <Check className="h-3 w-3 text-[var(--muted-foreground)]" />
+                                        <Check className="h-3 w-3 text-[var(--muted-foreground)] absolute -left-1" />
+                                      </div>
+                                    )}
+                                    {msg.deliveryStatus === "read" && (
+                                      <div className="relative text-[#00a884]">
+                                        <Check className="h-3 w-3" />
+                                        <Check className="h-3 w-3 absolute -left-1" />
+                                      </div>
+                                    )}
+                                  </span>
+                                ) : null}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )
-            })
+                )
+              })}
+            </div>
           )
         })()}
         <div ref={messagesEndRef} />
@@ -582,80 +633,129 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
 
       {/* Input */}
       <div className="border-t bg-card p-4">
+        {/* Moderation Warning Banner */}
+        {moderationWarning && (
+          <div className={`mb-2 flex items-start gap-2 text-xs rounded-lg p-3 ${
+            isMessageBlocked
+              ? 'text-red-700 dark:text-red-400 bg-red-500/10 border border-red-500/30'
+              : 'text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/30'
+          }`}>
+            <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+            <span>{moderationWarning}</span>
+          </div>
+        )}
+        
         {!isEncryptionReady && (
-          <div className="mb-2 flex items-center gap-2 text-xs text-orange-600 dark:text-orange-400 bg-orange-500/10 border border-orange-500/20 rounded-lg p-2">
+          <div className="mb-2 flex items-center gap-2 text-xs text-orange-600 dark:text-orange-400 bg-orange-500/10 border border-orange-500/20 rounded-lg p-2 backdrop-blur-sm">
             <Loader2 className="h-3 w-3 animate-spin flex-shrink-0" />
             <span>Setting up encryption - messages will send automatically when ready</span>
           </div>
         )}
+      {/* Message Input - Glassmorphism Style */}
+      <div className="backdrop-blur-xl bg-[color-mix(in_srgb,var(--background)_70%,transparent)] border-t border-[color-mix(in_srgb,var(--border)_50%,transparent)] px-4 py-3 shadow-[0_-4px_16px_0_color-mix(in_srgb,var(--foreground)_5%,transparent)]">
         {optimisticMessages.length > 0 && (
-          <div className="mb-2 flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg p-2">
+          <div className="mb-2 flex items-center gap-2 text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg p-2 backdrop-blur-sm">
             <Loader2 className="h-3 w-3 animate-spin flex-shrink-0" />
             <span>
               <strong>{optimisticMessages.length}</strong> {optimisticMessages.length === 1 ? "message" : "messages"} queued - establishing secure connection...
             </span>
           </div>
         )}
-        <div className="flex gap-2">
-          <Input
-            ref={inputRef}
-            value={messageInput}
-            onChange={(e) => setMessageInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault()
-                handleSendMessage()
-              }
-            }}
-            placeholder={isEncryptionReady ? "Type your message..." : "Type message (will send when encryption ready)..."}
-            disabled={isEncrypting}
-            className="flex-1"
-          />
-          <Button
-            onClick={handleSendMessage}
+
+        <form onSubmit={handleSendMessage} className="flex items-end gap-3">
+          <div className="flex-1 relative">
+            <textarea
+              ref={inputRef}
+              value={messageInput}
+              onChange={(e) => setMessageInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault()
+                  handleSendMessage()
+                }
+              }}
+              placeholder={isEncryptionReady ? "Type a message..." : "Type message (will send when encryption ready)..."}
+              disabled={isEncrypting}
+              className="w-full backdrop-blur-sm bg-[color-mix(in_srgb,var(--input)_80%,transparent)] text-[var(--foreground)] placeholder-[var(--muted-foreground)] border border-[color-mix(in_srgb,var(--border)_40%,transparent)] rounded-2xl px-4 py-3 pr-12 resize-none min-h-[44px] max-h-32 focus:outline-none focus:ring-2 focus:ring-[var(--ring)] transition-all duration-200"
+              rows={1}
+              style={{
+                height: 'auto',
+                minHeight: '44px'
+              }}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = 'auto';
+                target.style.height = Math.min(target.scrollHeight, 128) + 'px';
+              }}
+            />
+            <button
+              type="button"
+              title="Add emoji"
+              className="absolute right-3 bottom-3 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
+              onClick={() => {/* TODO: Add emoji picker */}}
+            >
+              <Smile className="h-5 w-5" />
+            </button>
+          </div>
+
+          <button
+            type="submit"
             disabled={!messageInput.trim() || isEncrypting}
-            size="icon"
-            title={isEncryptionReady ? "Send message" : "Message will be queued"}
+            className={`p-3 rounded-full transition-all duration-200 backdrop-blur-sm ${
+              messageInput.trim() && !isEncrypting
+                ? "bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-[var(--primary-foreground)] shadow-lg"
+                : "bg-[color-mix(in_srgb,var(--muted)_60%,transparent)] text-[var(--muted-foreground)] cursor-not-allowed border border-[color-mix(in_srgb,var(--border)_30%,transparent)]"
+            }`}
           >
             {isEncrypting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : isMessageBlocked ? (
+              <XIcon className="h-5 w-5" />
             ) : (
-              <Send className="h-4 w-4" />
+              <Send className="h-5 w-5" />
             )}
-          </Button>
-        </div>
+          </button>
+        </form>
+
+        {isEncryptionReady && (
+          <div className="flex items-center gap-2 mt-2 text-xs text-[var(--muted-foreground)]">
+            <Lock className="h-3 w-3" />
+            <span>Messages are end-to-end encrypted</span>
+          </div>
+        )}
+      </div>
       </div>
 
       {/* End Chat Confirmation */}
       {showEndConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <Card className="max-w-md w-full">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <Card className="w-auto max-w-xs mx-auto">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 <AlertTriangle className="h-5 w-5 text-orange-500" />
                 End Chat?
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground">
                 Are you sure you want to end this chat? This action cannot be undone, and
                 you won't be able to send or receive messages in this conversation anymore.
               </p>
-              <div className="flex gap-2">
+              <div className="flex gap-2 pt-2">
                 <Button
                   variant="outline"
-                  className="flex-1"
+                  className="flex-1 h-8 text-xs"
                   onClick={() => setShowEndConfirm(false)}
                 >
-                  <XIcon className="h-4 w-4 mr-2" />
+                  <XIcon className="h-3 w-3 mr-1" />
                   Cancel
                 </Button>
                 <Button
                   variant="destructive"
-                  className="flex-1"
+                  className="flex-1 h-8 text-xs"
                   onClick={handleEndChat}
                 >
-                  <Check className="h-4 w-4 mr-2" />
+                  <Check className="h-3 w-3 mr-1" />
                   End Chat
                 </Button>
               </div>

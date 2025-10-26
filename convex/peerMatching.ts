@@ -600,6 +600,10 @@ export const reportPeerMatch = mutation({
       contentId: args.matchId,
       reportedBy: userId,
       reason: args.reason,
+      violations: [], // No automated violations for user reports
+      severity: "medium", // User reports are medium priority by default
+      confidence: 1.0, // User reports have full confidence
+      autoBlocked: false, // User reports don't auto-block
       priority: "high",
       status: "pending",
       createdAt: Date.now(),
@@ -923,7 +927,17 @@ export const getMatchDetails = query({
     const peerId = match.user1Id === userId ? match.user2Id : match.user1Id;
 
     if (!peerId) {
-      throw new Error("Peer ID not found in match");
+      // Handle edge case where peer ID is not set (shouldn't happen but handle gracefully)
+      return {
+        matchId: match._id,
+        peerId: null,
+        status: match.status,
+        createdAt: match.createdAt,
+        iceBreaker: match.iceBreaker,
+        messageCount: match.messageCount,
+        peerDisplayName: "Unknown Peer",
+        matchScore: match.matchScore,
+      };
     }
 
     // Get peer profile (only pseudonym, no PII)

@@ -87,7 +87,13 @@ const dictionaries: Record<Locale, Dict> = {
     mood_msg_crisis_title: "Craving hitting hard?",
     mood_msg_crisis_sub: "Emergency support is here. You don't have to fight this alone.",
     
-    // Mood Indicator (Recovery State Indicator)
+    // Mood Indicator (Recovery State Indicator) - Descriptions
+    mood_calm_desc: "Your recovery space is balanced and stable",
+    mood_anxious_desc: "Your space has extra breathing room for tough moments",
+    mood_low_desc: "Your space is softer and more supportive",
+    mood_lonely_desc: "Your recovery space feels welcoming and safe",
+    mood_crisis_desc: "Your space is clear and focused on recovery",
+    
     mood_space_balanced: "Your recovery space is balanced and stable",
     mood_space_breathing: "Your space has extra breathing room for tough moments",
     mood_space_softer: "Your space is softer and more supportive",

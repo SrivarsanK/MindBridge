@@ -5,10 +5,12 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 
 export async function POST(req: Request) {
   try {
-    const { userId } = await auth();
+    const { userId, getToken } = await auth();
     if (!userId) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -21,14 +23,19 @@ export async function POST(req: Request) {
     // Import analyzer dynamically to avoid loading TensorFlow on every request
     const { getLSTMAnalyzer } = await import('@/lib/ml/lstm-analyzer');
     const { ConvexHttpClient } = await import('convex/browser');
-    const { api } = await import('@/convex/_generated/api');
 
     const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL!;
     const convex = new ConvexHttpClient(convexUrl);
 
+    // Set auth token for Convex client
+    const token = await getToken();
+    if (token) {
+      convex.setAuth(token);
+    }
+
     // Check if user has enough conversations
     const eligibility = await convex.query(api.userPatterns.canEnablePersonalization, {
-      userId: userId as any,
+      userId: userId as Id<"users">,
       minConversations: 5,
     });
 
@@ -43,7 +50,7 @@ export async function POST(req: Request) {
 
     // Check if pattern analysis was done recently (within last 24 hours)
     const existingPattern = await convex.query(api.userPatterns.getUserPatterns, {
-      userId: userId as any,
+      userId: userId as Id<"users">,
     });
 
     if (!force && existingPattern && Date.now() - existingPattern.lastUpdated < 86400000) {
@@ -57,7 +64,7 @@ export async function POST(req: Request) {
 
     // Fetch user's conversation history
     const chatHistory = await convex.query(api.userPatterns.getUserChatHistory, {
-      userId: userId as any,
+      userId: userId as Id<"users">,
       limit: 100,
     });
 
@@ -81,9 +88,18 @@ export async function POST(req: Request) {
         }
         currentConv = [];
       }
+
+      // Skip encrypted messages that can't be decrypted in this context
+      // In a real implementation, you'd decrypt using user's private keys
+      let content = msg.encryptedContent;
+      if (typeof content === 'string' && content.startsWith('encrypted:')) {
+        // Skip encrypted messages for analysis
+        return;
+      }
+
       currentConv.push({
         role: msg.role,
-        content: msg.encryptedContent, // Note: Would need decryption in real scenario
+        content: content,
         timestamp: msg.timestamp,
       });
       lastTimestamp = msg.timestamp;
@@ -95,40 +111,43 @@ export async function POST(req: Request) {
 
     const startTime = Date.now();
 
-    // Analyze patterns using LSTM
+    // Analyze patterns using Gemini AI
     const analyzer = getLSTMAnalyzer();
-    const pattern = await analyzer.analyzeConversations(conversations, userId);
+    const allMessages = conversations.flat();
+    const pattern = await analyzer.analyzePatterns(allMessages);
 
     const processingTime = Date.now() - startTime;
 
     // Store patterns in Convex
     await convex.mutation(api.userPatterns.upsertUserPatterns, {
-      userId: userId as any,
-      ...pattern,
+      userId: userId as Id<"users">,
+      emotionalProfile: pattern.emotionalProfile,
+      topicPreferences: pattern.topicPreferences,
+      communicationStyle: pattern.communicationStyle,
       conversationCount: conversations.length,
+      personalizedContext: `User prefers ${pattern.communicationStyle.tone} communication with ${pattern.communicationStyle.preferredResponseLength} responses.`,
     });
 
-    // Create embedding for recent conversations
+    // Create embedding for recent conversations (simplified for Gemini)
     if (conversations.length > 0) {
       const recentConv = conversations[0];
-      const embedding = await analyzer.createEmbedding(recentConv);
-      
+
       await convex.mutation(api.userPatterns.storeConversationEmbedding, {
-        userId: userId as any,
+        userId: userId as Id<"users">,
         conversationId: chatHistory[0].conversationId,
-        embeddingVector: JSON.stringify(embedding),
+        embeddingVector: JSON.stringify([0.5, 0.5, 0.5]), // Placeholder for Gemini
         timestamp: Date.now(),
         emotionalState: pattern.emotionalProfile.dominantEmotions[0] || 'neutral',
         topics: pattern.topicPreferences.interests.slice(0, 3),
         sentimentScore: 0, // Would need sentiment analysis
         messageCount: recentConv.length,
-        sessionDuration: Math.floor(pattern.conversationPatterns.sessionDuration),
+        sessionDuration: 300, // Default 5 minutes
       });
     }
 
     // Record learning session
     await convex.mutation(api.userPatterns.recordLearningSession, {
-      userId: userId as any,
+      userId: userId as Id<"users">,
       conversationsAnalyzed: conversations.length,
       patternsExtracted: [
         {
@@ -144,7 +163,7 @@ export async function POST(req: Request) {
         {
           patternType: 'style',
           confidence: 0.90,
-          description: `Prefers ${pattern.communicationStyle.preferredTone} tone, ${pattern.communicationStyle.responseLength} responses`,
+          description: `Prefers ${pattern.communicationStyle.tone} tone, ${pattern.communicationStyle.preferredResponseLength} responses`,
         },
       ],
       modelVersion: '1.0.0',
@@ -165,15 +184,20 @@ export async function POST(req: Request) {
     
     // Record failed learning session
     try {
-      const { userId } = await auth();
+      const { userId, getToken } = await auth();
       if (userId) {
         const { ConvexHttpClient } = await import('convex/browser');
-        const { api } = await import('@/convex/_generated/api');
         const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL!;
         const convex = new ConvexHttpClient(convexUrl);
         
+        // Set auth token for Convex client
+        const token = await getToken();
+        if (token) {
+          convex.setAuth(token);
+        }
+
         await convex.mutation(api.userPatterns.recordLearningSession, {
-          userId: userId as any,
+          userId: userId as Id<"users">,
           conversationsAnalyzed: 0,
           patternsExtracted: [],
           modelVersion: '1.0.0',
@@ -202,7 +226,7 @@ export async function POST(req: Request) {
  */
 export async function GET(req: Request) {
   try {
-    const { userId } = await auth();
+    const { userId, getToken } = await auth();
     if (!userId) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -211,15 +235,20 @@ export async function GET(req: Request) {
     }
 
     const { ConvexHttpClient } = await import('convex/browser');
-    const { api } = await import('@/convex/_generated/api');
 
     const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL!;
     const convex = new ConvexHttpClient(convexUrl);
 
+    // Set auth token for Convex client
+    const token = await getToken();
+    if (token) {
+      convex.setAuth(token);
+    }
+
     const [pattern, eligibility, sessions] = await Promise.all([
-      convex.query(api.userPatterns.getUserPatterns, { userId: userId as any }),
-      convex.query(api.userPatterns.canEnablePersonalization, { userId: userId as any }),
-      convex.query(api.userPatterns.getLearningSessions, { userId: userId as any, limit: 5 }),
+      convex.query(api.userPatterns.getUserPatterns, { userId: userId as Id<"users"> }),
+      convex.query(api.userPatterns.canEnablePersonalization, { userId: userId as Id<"users"> }),
+      convex.query(api.userPatterns.getLearningSessions, { userId: userId as Id<"users">, limit: 5 }),
     ]);
 
     return NextResponse.json({
@@ -247,7 +276,7 @@ export async function GET(req: Request) {
  */
 export async function DELETE(req: Request) {
   try {
-    const { userId } = await auth();
+    const { userId, getToken } = await auth();
     if (!userId) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -256,14 +285,17 @@ export async function DELETE(req: Request) {
     }
 
     const { ConvexHttpClient } = await import('convex/browser');
-    const { api } = await import('@/convex/_generated/api');
 
     const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL!;
     const convex = new ConvexHttpClient(convexUrl);
 
-    await convex.mutation(api.userPatterns.deleteUserPatterns, {
-      userId: userId as any,
-    });
+    // Set auth token for Convex client
+    const token = await getToken();
+    if (token) {
+      convex.setAuth(token);
+    }
+
+    await convex.mutation(api.userPatterns.deleteUserPatterns, { userId: userId as Id<"users"> });
 
     return NextResponse.json({
       success: true,

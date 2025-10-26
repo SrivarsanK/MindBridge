@@ -49,23 +49,11 @@ export const upsertUserPatterns = mutation({
       ),
     }),
     communicationStyle: v.object({
-      preferredTone: v.union(
-        v.literal("formal"),
-        v.literal("casual"),
-        v.literal("empathetic"),
-        v.literal("direct"),
-        v.literal("supportive")
-      ),
-      responseLength: v.union(
-        v.literal("brief"),
-        v.literal("moderate"),
-        v.literal("detailed")
-      ),
-      languageComplexity: v.union(
-        v.literal("simple"),
-        v.literal("moderate"),
-        v.literal("advanced")
-      ),
+      tone: v.string(),
+      verbosity: v.string(),
+      preferredResponseLength: v.string(),
+      communicationPatterns: v.array(v.string()),
+      supportNeeds: v.array(v.string()),
     }),
     conversationPatterns: v.object({
       averageMessageLength: v.number(),

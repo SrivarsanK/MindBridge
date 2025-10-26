@@ -24,10 +24,9 @@ import {
   CheckCircle2,
   Loader2 
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 export function PersonalizationSettingsCard() {
-  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -66,24 +65,13 @@ export function PersonalizationSettingsCard() {
       const data = await response.json();
 
       if (data.success) {
-        toast({
-          title: "✅ Analysis Complete",
-          description: `Analyzed ${data.conversationsAnalyzed} conversations in ${(data.processingTime / 1000).toFixed(2)}s`,
-        });
+        toast.success(`✅ Analysis Complete - Analyzed ${data.conversationsAnalyzed} conversations in ${(data.processingTime / 1000).toFixed(2)}s`);
         await loadStatus();
       } else {
-        toast({
-          title: "⚠️ Cannot Analyze Yet",
-          description: data.message,
-          variant: "default",
-        });
+        toast.warning(`⚠️ Cannot Analyze Yet: ${data.message}`);
       }
     } catch (error: any) {
-      toast({
-        title: "❌ Analysis Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(`❌ Analysis Failed: ${error.message || "Unknown error"}`);
     } finally {
       setAnalyzing(false);
     }
@@ -94,18 +82,9 @@ export function PersonalizationSettingsCard() {
     try {
       // Note: This would call a toggle endpoint once implemented
       setPersonalizationEnabled(enabled);
-      toast({
-        title: enabled ? "✅ Personalization Enabled" : "⏸️ Personalization Paused",
-        description: enabled 
-          ? "AI will use your conversation patterns for better responses" 
-          : "AI will use default behavior",
-      });
+      toast.success(enabled ? "✅ Personalization Enabled - AI will use your conversation patterns for better responses" : "⏸️ Personalization Paused - AI will use default behavior");
     } catch (error: any) {
-      toast({
-        title: "❌ Failed to Update",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(`❌ Failed to Update: ${error.message}`);
     }
   };
 
@@ -124,19 +103,12 @@ export function PersonalizationSettingsCard() {
       const data = await response.json();
 
       if (data.success) {
-        toast({
-          title: "🗑️ Data Deleted",
-          description: "All personalization data has been removed",
-        });
+        toast.success("🗑️ Data Deleted - All personalization data has been removed");
         await loadStatus();
         setPersonalizationEnabled(false);
       }
     } catch (error: any) {
-      toast({
-        title: "❌ Deletion Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(`❌ Deletion Failed: ${error.message}`);
     } finally {
       setDeleting(false);
     }
@@ -282,11 +254,11 @@ export function PersonalizationSettingsCard() {
                   </div>
                   <div className="text-sm">
                     <span className="font-medium">
-                      {status.pattern.communicationStyle.preferredTone}
+                      {status.pattern.communicationStyle.tone}
                     </span>
                     {" • "}
                     <span>
-                      {status.pattern.communicationStyle.responseLength} responses
+                      {status.pattern.communicationStyle.preferredResponseLength} responses
                     </span>
                   </div>
                 </div>

@@ -53,21 +53,35 @@ export async function POST(req: Request) {
       try {
         // Dynamically import to avoid loading on every request
         const { ConvexHttpClient } = await import('convex/browser');
+        const { api } = await import('@/convex/_generated/api');
+        const { getToken } = await auth();
         
         const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL!;
         if (convexUrl) {
           const convex = new ConvexHttpClient(convexUrl);
           
-          // Note: This will work once Convex API is regenerated
-          // For now, we'll catch the error gracefully
+          // Set auth token for Convex client
+          const token = await getToken({ template: "convex" });
+          if (token) {
+            convex.setAuth(token);
+          }
+
           try {
-            const userPattern = await (convex as any).query(
-              'userPatterns:getUserPatterns',
-              { userId: userId as any }
-            );
+            const userPattern = await convex.query(api.userPatterns.getUserPatterns, {});
             
             if (userPattern && userPattern.personalizationEnabled) {
-              personalizedContext = `\n\nUser Context: ${userPattern.personalizedContext}`;
+              // Create personalized context from available pattern data
+              const contextParts = [];
+              if (userPattern.emotionalProfile?.dominantEmotions?.length > 0) {
+                contextParts.push(`Emotional profile: ${userPattern.emotionalProfile.dominantEmotions.join(', ')}`);
+              }
+              if (userPattern.communicationStyle?.tone) {
+                contextParts.push(`Communication style: ${userPattern.communicationStyle.tone} tone`);
+              }
+              if (userPattern.topicPreferences?.interests?.length > 0) {
+                contextParts.push(`Interests: ${userPattern.topicPreferences.interests.slice(0, 3).join(', ')}`);
+              }
+              personalizedContext = contextParts.length > 0 ? `\n\nUser Context: ${contextParts.join('. ')}` : '';
               console.log("Using personalized context for user");
             }
           } catch (patternError) {
@@ -86,7 +100,7 @@ export async function POST(req: Request) {
 
     const isCrisis = detectCrisis(lastUserMessage);
 
-    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
     console.log("Gemini API Key exists:", !!apiKey);
     console.log("API Key prefix:", apiKey?.substring(0, 10));
     console.log("User locale:", locale);

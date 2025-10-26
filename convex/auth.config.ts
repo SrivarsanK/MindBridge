@@ -1,8 +1,8 @@
 export default {
   providers: [
     {
-      domain: process.env.CONVEX_SITE_URL,
-      applicationID: "convex",
+      domain: "https://welcome-shrimp-32.clerk.accounts.dev",
+      applicationID: "welcome-shrimp-32",
     },
   ],
 };

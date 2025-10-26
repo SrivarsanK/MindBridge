@@ -2,6 +2,8 @@
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 
+@layer theme, base, clerk, components, utilities;
+
 @custom-variant dark (&:is(.dark *));
 
 :root {
@@ -200,6 +202,39 @@ body.dark {
     outline: 2px solid var(--focus-ring);
     outline-offset: 2px;
   }
+}
+
+/* Custom glowing text effect */
+.glow-text {
+  text-shadow: 
+    0 0 20px rgba(var(--primary), 0.5),
+    0 0 40px rgba(var(--primary), 0.3),
+    0 0 60px rgba(var(--primary), 0.2),
+    0 0 80px rgba(var(--primary), 0.1);
+  filter: drop-shadow(0 0 10px rgba(var(--primary), 0.3));
+}
+
+.glow-text-pulse {
+  text-shadow: 
+    0 0 30px rgba(var(--primary), 0.8),
+    0 0 60px rgba(var(--primary), 0.6),
+    0 0 90px rgba(var(--primary), 0.4);
+  filter: blur(1px);
+}
+
+/* Custom animation durations for background elements */
+.animate-pulse-slow {
+  animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-pulse-slower {
+  animation: pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation-delay: 1s;
+}
+
+.animate-pulse-slowest {
+  animation: pulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation-delay: 2s;
 }
 
 /* ============================================

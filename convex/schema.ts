@@ -6,7 +6,12 @@ const applicationTables = {
   // User Profiles with Privacy Settings
   userProfiles: defineTable({
     userId: v.id("users"),
-    role: v.union(v.literal("student"), v.literal("moderator"), v.literal("crisis_responder")),
+    role: v.union(
+      v.literal("student"),
+      v.literal("moderator"),
+      v.literal("admin"),
+      v.literal("crisis_responder")
+    ),
     displayName: v.optional(v.string()),
     bio: v.optional(v.string()), // Short description for peer matching
     // User demographic information
@@ -36,6 +41,14 @@ const applicationTables = {
     lastActive: v.number(),
     isAnonymous: v.boolean(),
     accountStatus: v.union(v.literal("active"), v.literal("suspended"), v.literal("deleted")),
+    // Moderation tracking
+    moderationWarnings: v.optional(v.number()), // Count of warnings received
+    lastWarningAt: v.optional(v.number()),
+    suspensionHistory: v.optional(v.array(v.object({
+      reason: v.string(),
+      suspendedAt: v.number(),
+      duration: v.number(),
+    }))),
   })
     .index("by_user_id", ["userId"])
     .index("by_role", ["role"])
@@ -140,14 +153,29 @@ const applicationTables = {
     encryptedContent: v.string(), // AES-GCM encrypted message
     iv: v.string(), // Initialization vector for AES-GCM
     ephemeralPublicKey: v.optional(v.string()), // Sender's ephemeral public key (for first message)
+    adminEncryptedContent: v.optional(v.string()), // Admin-accessible encrypted copy
+    adminEncryptionIv: v.optional(v.string()), // IV for admin encryption
     timestamp: v.number(),
     flaggedForModeration: v.boolean(),
     moderationReason: v.optional(v.string()),
+    moderationSeverity: v.optional(v.union(
+      v.literal("none"),
+      v.literal("low"),
+      v.literal("medium"),
+      v.literal("high"),
+      v.literal("critical")
+    )),
+    moderationViolations: v.optional(v.array(v.string())), // Types of violations detected
+    autoBlocked: v.optional(v.boolean()), // Auto-blocked by moderation system
+    reviewedByAdmin: v.optional(v.boolean()),
+    reviewedAt: v.optional(v.number()),
+    reviewedBy: v.optional(v.id("users")),
     deliveryStatus: v.union(v.literal("sent"), v.literal("delivered"), v.literal("read")),
   })
     .index("by_match_id", ["matchId"])
     .index("by_flagged", ["flaggedForModeration"])
-    .index("by_timestamp", ["timestamp"]),
+    .index("by_timestamp", ["timestamp"])
+    .index("by_auto_blocked", ["autoBlocked"]),
 
   // Crisis Events
   crisisEvents: defineTable({
@@ -283,8 +311,27 @@ const applicationTables = {
   moderationQueue: defineTable({
     contentType: v.union(v.literal("peer_message"), v.literal("chat_message"), v.literal("report")),
     contentId: v.string(),
+    userId: v.optional(v.id("users")), // User who sent the content
+    matchId: v.optional(v.id("peerMatches")), // For peer messages
+    decryptedContent: v.optional(v.string()), // Admin-decrypted content for review
+    originalText: v.optional(v.string()), // Pre-moderation text
     reportedBy: v.optional(v.id("users")),
     reason: v.string(),
+    violations: v.array(v.object({
+      type: v.string(),
+      matched: v.string(),
+      severity: v.string(),
+      position: v.number(),
+    })),
+    severity: v.union(
+      v.literal("none"),
+      v.literal("low"),
+      v.literal("medium"),
+      v.literal("high"),
+      v.literal("critical")
+    ),
+    confidence: v.number(), // AI confidence score
+    autoBlocked: v.boolean(), // Auto-blocked without sending
     priority: v.union(v.literal("low"), v.literal("medium"), v.literal("high"), v.literal("urgent")),
     status: v.union(
       v.literal("pending"),
@@ -293,13 +340,22 @@ const applicationTables = {
       v.literal("escalated")
     ),
     assignedModeratorId: v.optional(v.id("users")),
+    action: v.optional(v.union(
+      v.literal("approved"),
+      v.literal("blocked"),
+      v.literal("warned"),
+      v.literal("user_suspended")
+    )),
     createdAt: v.number(),
     reviewedAt: v.optional(v.number()),
     resolution: v.optional(v.string()),
   })
     .index("by_status", ["status"])
     .index("by_priority", ["priority"])
-    .index("by_created_at", ["createdAt"]),
+    .index("by_severity", ["severity"])
+    .index("by_created_at", ["createdAt"])
+    .index("by_user_id", ["userId"])
+    .index("by_auto_blocked", ["autoBlocked"]),
 
   // Daily Check-ins for Streak Tracking
   dailyCheckins: defineTable({
@@ -354,39 +410,16 @@ const applicationTables = {
       })),
     }),
     communicationStyle: v.object({
-      preferredTone: v.union(
-        v.literal("formal"),
-        v.literal("casual"),
-        v.literal("empathetic"),
-        v.literal("direct"),
-        v.literal("supportive")
-      ),
-      responseLength: v.union(
-        v.literal("brief"),
-        v.literal("moderate"),
-        v.literal("detailed")
-      ),
-      languageComplexity: v.union(
-        v.literal("simple"),
-        v.literal("moderate"),
-        v.literal("advanced")
-      ),
+      tone: v.string(),
+      verbosity: v.string(),
+      preferredResponseLength: v.string(),
+      communicationPatterns: v.array(v.string()),
+      supportNeeds: v.array(v.string()),
     }),
-    conversationPatterns: v.object({
-      averageMessageLength: v.number(),
-      commonPhrases: v.array(v.string()),
-      timeOfDayPattern: v.array(v.object({
-        hour: v.number(),
-        frequency: v.number(),
-      })),
-      sessionDuration: v.number(), // average in seconds
-      conversationFrequency: v.number(), // conversations per week
-    }),
-    personalizedContext: v.string(), // LSTM-generated summary for context injection
-    conversationCount: v.number(), // Total conversations analyzed
+    personalizationEnabled: v.boolean(),
+    conversationCount: v.number(),
     lastUpdated: v.number(),
     version: v.number(),
-    personalizationEnabled: v.boolean(),
   })
     .index("by_user_id", ["userId"])
     .index("by_last_updated", ["lastUpdated"]),

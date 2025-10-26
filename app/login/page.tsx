@@ -1,7 +1,6 @@
 "use client"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { SignInButton, SignUpButton } from "@clerk/nextjs"
 import { Shield, Lock, Heart, Sparkles } from "lucide-react"
 import { LogoWithBackground } from "@/components/ui/logo-with-background"
 
@@ -51,17 +50,17 @@ export default function LoginPage() {
 
             {/* Auth Buttons */}
             <div className="space-y-3 mb-6">
-              <SignInButton mode="modal">
-                <Button className="w-full h-12 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20 transition-all hover:shadow-xl">
+              <Button asChild className="w-full h-12 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20 transition-all hover:shadow-xl">
+                <Link href="/sign-in">
                   Sign In
-                </Button>
-              </SignInButton>
+                </Link>
+              </Button>
               
-              <SignUpButton mode="modal">
-                <Button variant="outline" className="w-full h-12 hover:bg-primary/5">
+              <Button asChild variant="outline" className="w-full h-12 hover:bg-primary/5">
+                <Link href="/sign-up">
                   Create Account
-                </Button>
-              </SignUpButton>
+                </Link>
+              </Button>
             </div>
 
             {/* Divider */}

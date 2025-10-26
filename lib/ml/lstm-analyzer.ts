@@ -1,22 +1,70 @@
 /**
- * LSTM-Based Pattern Analyzer for User Personalization
- * 
- * This module provides LSTM-based analysis of user conversation patterns
- * to enable personalized AI responses. It analyzes emotional states, topics,
- * communication styles, and temporal patterns.
+ * Google Gemini-Based Pattern Analyzer for User Personalization
+ *
+ * This module provides AI-powered analysis of user conversation patterns
+ * using Google Gemini to enable personalized AI responses. It analyzes
+ * emotional states, topics, communication styles, and temporal patterns.
  */
 
-import * as tf from '@tensorflow/tfjs-node';
-import natural from 'natural';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import Sentiment from 'sentiment';
 import nlp from 'compromise';
 import { removeStopwords, eng } from 'stopword';
 
 const sentiment = new Sentiment();
-const tokenizer = new natural.WordTokenizer();
-const TfIdf = natural.TfIdf;
 
-// Emotion keywords mapping
+// Simple tokenizer function (replacement for natural.WordTokenizer)
+function tokenize(text: string): string[] {
+  return text.toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .split(/\s+/)
+    .filter(word => word.length > 0);
+}
+
+// Simple TF-IDF implementation
+class SimpleTfIdf {
+  private documents: string[][] = [];
+  private termFrequency: Map<string, number> = new Map();
+  private documentFrequency: Map<string, number> = new Map();
+
+  addDocument(tokens: string[]): void {
+    this.documents.push(tokens);
+    const uniqueTerms = new Set(tokens);
+
+    uniqueTerms.forEach(term => {
+      this.documentFrequency.set(term, (this.documentFrequency.get(term) || 0) + 1);
+    });
+  }
+
+  getTopTerms(docIndex: number, limit: number = 5): Array<{ term: string; tfidf: number }> {
+    const doc = this.documents[docIndex];
+    if (!doc) return [];
+
+    const termCounts = new Map<string, number>();
+    doc.forEach(term => {
+      termCounts.set(term, (termCounts.get(term) || 0) + 1);
+    });
+
+    const results: Array<{ term: string; tfidf: number }> = [];
+
+    termCounts.forEach((count, term) => {
+      const tf = count / doc.length;
+      const idf = Math.log(this.documents.length / (this.documentFrequency.get(term) || 1));
+      const tfidf = tf * idf;
+      results.push({ term, tfidf });
+    });
+
+    return results
+      .sort((a, b) => b.tfidf - a.tfidf)
+      .slice(0, limit);
+  }
+}
+
+// Initialize Gemini AI
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+// Emotion keywords mapping (fallback)
 const EMOTION_KEYWORDS = {
   anxious: ['anxious', 'worried', 'nervous', 'stressed', 'tense', 'uneasy', 'fearful'],
   sad: ['sad', 'depressed', 'down', 'unhappy', 'miserable', 'gloomy', 'melancholy'],
@@ -54,9 +102,11 @@ export interface TopicPreferences {
 }
 
 export interface CommunicationStyle {
-  preferredTone: 'formal' | 'casual' | 'empathetic' | 'direct' | 'supportive';
-  responseLength: 'brief' | 'moderate' | 'detailed';
-  languageComplexity: 'simple' | 'moderate' | 'advanced';
+  tone: string;
+  verbosity: string;
+  preferredResponseLength: string;
+  communicationPatterns: string[];
+  supportNeeds: string[];
 }
 
 export interface ConversationPatterns {
@@ -76,509 +126,231 @@ export interface UserPattern {
 }
 
 export class LSTMPatternAnalyzer {
-  private emotionModel: tf.LayersModel | null = null;
-  private topicModel: tf.LayersModel | null = null;
-  private styleModel: tf.LayersModel | null = null;
-  private vocabSize: number = 10000;
-  private embeddingDim: number = 128;
-  private maxSequenceLength: number = 100;
-
   constructor() {
-    this.initializeModels();
+    // No initialization needed for Gemini
   }
 
   /**
-   * Initialize LSTM models for pattern recognition
+   * Analyze user conversation patterns using Google Gemini
    */
-  private async initializeModels() {
+  async analyzePatterns(conversations: ConversationMessage[]): Promise<{
+    emotionalProfile: EmotionalProfile;
+    topicPreferences: TopicPreferences;
+    communicationStyle: CommunicationStyle;
+    personalizationEnabled: boolean;
+  }> {
     try {
-      // Model 1: Emotional Pattern Recognition
-      this.emotionModel = tf.sequential({
-        layers: [
-          tf.layers.embedding({
-            inputDim: this.vocabSize,
-            outputDim: this.embeddingDim,
-            inputLength: this.maxSequenceLength,
-          }),
-          tf.layers.lstm({
-            units: 128,
-            returnSequences: true,
-            dropout: 0.3,
-          }),
-          tf.layers.lstm({
-            units: 64,
-            returnSequences: false,
-          }),
-          tf.layers.dense({
-            units: 32,
-            activation: 'relu',
-          }),
-          tf.layers.dropout({ rate: 0.3 }),
-          tf.layers.dense({
-            units: Object.keys(EMOTION_KEYWORDS).length,
-            activation: 'softmax',
-          }),
-        ],
-      });
+      // Prepare conversation history for Gemini
+      const conversationText = conversations
+        .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
+        .join('\n\n');
 
-      this.emotionModel.compile({
-        optimizer: tf.train.adam(0.001),
-        loss: 'categoricalCrossentropy',
-        metrics: ['accuracy'],
-      });
+      // Create comprehensive analysis prompt
+      const analysisPrompt = `
+You are an expert psychologist analyzing conversation patterns for personalized mental health support.
 
-      // Model 2: Topic Preference Learning (Bidirectional LSTM)
-      this.topicModel = tf.sequential({
-        layers: [
-          tf.layers.embedding({
-            inputDim: this.vocabSize,
-            outputDim: this.embeddingDim,
-            inputLength: this.maxSequenceLength,
-          }),
-          tf.layers.bidirectional({
-            layer: tf.layers.lstm({
-              units: 128,
-              returnSequences: true,
-            }),
-          }),
-          tf.layers.globalAveragePooling1d(),
-          tf.layers.dense({
-            units: 64,
-            activation: 'relu',
-          }),
-          tf.layers.dense({
-            units: 32,
-            activation: 'sigmoid',
-          }),
-        ],
-      });
+Analyze the following conversation history and provide a detailed psychological profile:
 
-      this.topicModel.compile({
-        optimizer: tf.train.adam(0.001),
-        loss: 'binaryCrossentropy',
-        metrics: ['accuracy'],
-      });
+CONVERSATION HISTORY:
+${conversationText}
 
-      // Model 3: Response Style Predictor
-      this.styleModel = tf.sequential({
-        layers: [
-          tf.layers.embedding({
-            inputDim: this.vocabSize,
-            outputDim: 64,
-            inputLength: this.maxSequenceLength,
-          }),
-          tf.layers.lstm({
-            units: 64,
-            returnSequences: false,
-          }),
-          tf.layers.dense({
-            units: 32,
-            activation: 'relu',
-          }),
-          tf.layers.dense({
-            units: 3, // [tone, length, complexity]
-            activation: 'softmax',
-          }),
-        ],
-      });
+Please provide a comprehensive analysis in the following JSON format:
+{
+  "emotionalProfile": {
+    "dominantEmotions": ["emotion1", "emotion2", "emotion3"],
+    "emotionalTrends": [
+      {"emotion": "emotion_name", "frequency": 0.0, "recentOccurrences": [timestamp1, timestamp2]}
+    ],
+    "responsePreferences": ["preference1", "preference2"]
+  },
+  "topicPreferences": {
+    "interests": ["topic1", "topic2", "topic3"],
+    "avoidances": ["topic_to_avoid1", "topic_to_avoid2"],
+    "favoriteTopics": [
+      {"topic": "topic_name", "engagementScore": 0.0}
+    ]
+  },
+  "communicationStyle": {
+    "tone": "formal/casual/supportive/direct",
+    "verbosity": "concise/detailed/verbose",
+    "preferredResponseLength": "short/medium/long",
+    "communicationPatterns": ["pattern1", "pattern2"],
+    "supportNeeds": ["need1", "need2"]
+  },
+  "personalizationEnabled": true
+}
 
-      this.styleModel.compile({
-        optimizer: tf.train.adam(0.001),
-        loss: 'categoricalCrossentropy',
-        metrics: ['accuracy'],
-      });
+Focus on:
+- Emotional patterns and triggers
+- Topics of interest and avoidance
+- Communication preferences
+- Support needs and coping mechanisms
+- Recovery-related patterns
 
-      console.log('LSTM models initialized successfully');
+Be specific and evidence-based in your analysis.`;
+
+      const result = await model.generateContent(analysisPrompt);
+      const response = await result.response;
+      const text = response.text();
+
+      // Parse JSON response
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('Invalid response format from Gemini');
+      }
+
+      const analysis = JSON.parse(jsonMatch[0]);
+
+      return {
+        emotionalProfile: analysis.emotionalProfile,
+        topicPreferences: analysis.topicPreferences,
+        communicationStyle: analysis.communicationStyle,
+        personalizationEnabled: analysis.personalizationEnabled
+      };
+
     } catch (error) {
-      console.error('Error initializing LSTM models:', error);
+      console.error('Gemini analysis failed:', error);
+      // Fallback to basic analysis
+      return this.fallbackAnalysis(conversations);
     }
   }
 
   /**
-   * Analyze user conversation history and extract patterns
+   * Fallback analysis using traditional NLP when Gemini fails
    */
-  async analyzeConversations(
-    conversations: ConversationMessage[][],
-    userId: string
-  ): Promise<UserPattern> {
-    const userMessages = this.extractUserMessages(conversations);
-    
-    // Parallel analysis of different aspects
-    const [
-      emotionalProfile,
-      topicPreferences,
-      communicationStyle,
-      conversationPatterns,
-    ] = await Promise.all([
-      this.analyzeEmotionalProfile(userMessages),
-      this.analyzeTopicPreferences(userMessages),
-      this.analyzeCommunicationStyle(userMessages),
-      this.analyzeConversationPatterns(conversations),
-    ]);
+  private fallbackAnalysis(conversations: ConversationMessage[]): {
+    emotionalProfile: EmotionalProfile;
+    topicPreferences: TopicPreferences;
+    communicationStyle: CommunicationStyle;
+    personalizationEnabled: boolean;
+  } {
+    // Extract emotions using sentiment analysis
+    const allText = conversations.map(c => c.content).join(' ');
+    const sentimentResult = sentiment.analyze(allText);
 
-    // Generate personalized context summary
-    const personalizedContext = this.generatePersonalizedContext({
-      emotionalProfile,
-      topicPreferences,
-      communicationStyle,
-      conversationPatterns,
+    // Extract topics using TF-IDF
+    const tfidf = new SimpleTfIdf();
+    conversations.forEach(conv => {
+      const tokens = tokenize(conv.content);
+      const cleanTokens = removeStopwords(tokens, eng);
+      tfidf.addDocument(cleanTokens);
     });
 
-    return {
-      emotionalProfile,
-      topicPreferences,
-      communicationStyle,
-      conversationPatterns,
-      personalizedContext,
-    };
-  }
-
-  /**
-   * Extract user messages from conversations
-   */
-  private extractUserMessages(conversations: ConversationMessage[][]): string[] {
-    return conversations
-      .flat()
-      .filter((msg) => msg.role === 'user')
-      .map((msg) => msg.content);
-  }
-
-  /**
-   * Analyze emotional profile using NLP and pattern recognition
-   */
-  private async analyzeEmotionalProfile(messages: string[]): Promise<EmotionalProfile> {
-    const emotionCounts: Record<string, number[]> = {};
-    
-    messages.forEach((message, index) => {
-      const lowerMessage = message.toLowerCase();
-      const sentimentResult = sentiment.analyze(message);
-      
-      // Detect emotions based on keywords
+    // Get dominant emotions
+    const emotionCounts: Record<string, number> = {};
+    conversations.forEach(conv => {
+      const text = conv.content.toLowerCase();
       Object.entries(EMOTION_KEYWORDS).forEach(([emotion, keywords]) => {
-        const hasEmotion = keywords.some((keyword) => lowerMessage.includes(keyword));
-        if (hasEmotion) {
-          if (!emotionCounts[emotion]) {
-            emotionCounts[emotion] = [];
+        keywords.forEach(keyword => {
+          if (text.includes(keyword)) {
+            emotionCounts[emotion] = (emotionCounts[emotion] || 0) + 1;
           }
-          emotionCounts[emotion].push(Date.now() - (messages.length - index) * 86400000);
-        }
-      });
-
-      // Use sentiment score to detect general mood
-      if (sentimentResult.score < -2) {
-        emotionCounts['sad'] = emotionCounts['sad'] || [];
-        emotionCounts['sad'].push(Date.now() - (messages.length - index) * 86400000);
-      } else if (sentimentResult.score > 2) {
-        emotionCounts['happy'] = emotionCounts['happy'] || [];
-        emotionCounts['happy'].push(Date.now() - (messages.length - index) * 86400000);
-      }
-    });
-
-    // Calculate dominant emotions
-    const emotionalTrends = Object.entries(emotionCounts)
-      .map(([emotion, occurrences]) => ({
-        emotion,
-        frequency: occurrences.length / messages.length,
-        recentOccurrences: occurrences.slice(-5),
-      }))
-      .sort((a, b) => b.frequency - a.frequency);
-
-    const dominantEmotions = emotionalTrends
-      .slice(0, 3)
-      .map((trend) => trend.emotion);
-
-    // Determine response preferences based on emotions
-    const responsePreferences = this.determineResponsePreferences(dominantEmotions);
-
-    return {
-      dominantEmotions,
-      emotionalTrends,
-      responsePreferences,
-    };
-  }
-
-  /**
-   * Analyze topic preferences using TF-IDF and NLP
-   */
-  private async analyzeTopicPreferences(messages: string[]): Promise<TopicPreferences> {
-    const tfidf = new TfIdf();
-    messages.forEach((message) => tfidf.addDocument(message));
-
-    // Extract key topics using TF-IDF
-    const topicScores: Record<string, number> = {};
-    
-    messages.forEach((message, docIndex) => {
-      const doc = nlp(message);
-      const topics = doc.topics().out('array');
-      
-      topics.forEach((topic: string) => {
-        const cleanTopic = topic.toLowerCase();
-        tfidf.tfidfs(cleanTopic, docIndex, (i, measure) => {
-          topicScores[cleanTopic] = (topicScores[cleanTopic] || 0) + measure;
         });
       });
     });
 
-    const sortedTopics = Object.entries(topicScores)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 10);
+    const dominantEmotions = Object.entries(emotionCounts)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 3)
+      .map(([emotion]) => emotion);
 
-    const favoriteTopics = sortedTopics.map(([topic, score]) => ({
-      topic,
-      engagementScore: Math.min(score / 10, 1), // Normalize to 0-1
-    }));
-
-    const interests = sortedTopics.slice(0, 5).map(([topic]) => topic);
-    const avoidances: string[] = []; // Would need negative feedback data
-
-    return {
-      interests,
-      avoidances,
-      favoriteTopics,
-    };
-  }
-
-  /**
-   * Analyze communication style preferences
-   */
-  private async analyzeCommunicationStyle(messages: string[]): Promise<CommunicationStyle> {
-    // Analyze message lengths
-    const avgLength = messages.reduce((sum, msg) => sum + msg.length, 0) / messages.length;
-    
-    const responseLength: 'brief' | 'moderate' | 'detailed' =
-      avgLength < 50 ? 'brief' : avgLength < 150 ? 'moderate' : 'detailed';
-
-    // Analyze formality
-    let formalityScore = 0;
-    const formalWords = ['please', 'thank', 'kindly', 'appreciate', 'sincerely'];
-    const casualWords = ['hey', 'yeah', 'gonna', 'wanna', 'gotta', 'like'];
-    
-    messages.forEach((message) => {
-      const lower = message.toLowerCase();
-      formalWords.forEach((word) => {
-        if (lower.includes(word)) formalityScore += 1;
-      });
-      casualWords.forEach((word) => {
-        if (lower.includes(word)) formalityScore -= 1;
+    // Extract topics
+    const topics: string[] = [];
+    conversations.forEach((conv, index) => {
+      const topTerms = tfidf.getTopTerms(index, 5);
+      topTerms.forEach(item => {
+        if (item.term.length > 3 && !topics.includes(item.term)) {
+          topics.push(item.term);
+        }
       });
     });
 
-    const preferredTone = this.determineTone(formalityScore, messages.length);
-
-    // Analyze language complexity
-    const avgWordsPerSentence = messages.reduce((sum, msg) => {
-      const sentences = msg.split(/[.!?]+/).filter(Boolean);
-      const words = msg.split(/\s+/).filter(Boolean);
-      return sum + (words.length / Math.max(sentences.length, 1));
-    }, 0) / messages.length;
-
-    const languageComplexity: 'simple' | 'moderate' | 'advanced' =
-      avgWordsPerSentence < 10 ? 'simple' : avgWordsPerSentence < 20 ? 'moderate' : 'advanced';
-
     return {
-      preferredTone,
-      responseLength,
-      languageComplexity,
+      emotionalProfile: {
+        dominantEmotions,
+        emotionalTrends: dominantEmotions.map(emotion => ({
+          emotion,
+          frequency: emotionCounts[emotion] / conversations.length,
+          recentOccurrences: conversations
+            .filter(c => c.content.toLowerCase().includes(emotion))
+            .slice(-3)
+            .map(c => c.timestamp)
+        })),
+        responsePreferences: ['supportive', 'empathetic', 'practical']
+      },
+      topicPreferences: {
+        interests: topics.slice(0, 5),
+        avoidances: [],
+        favoriteTopics: topics.slice(0, 3).map(topic => ({
+          topic,
+          engagementScore: 0.5
+        }))
+      },
+      communicationStyle: {
+        tone: 'supportive',
+        verbosity: 'balanced',
+        preferredResponseLength: 'medium',
+        communicationPatterns: ['direct', 'honest'],
+        supportNeeds: ['emotional_support', 'practical_advice']
+      },
+      personalizationEnabled: true
     };
   }
 
   /**
-   * Analyze conversation patterns (timing, frequency, etc.)
+   * Generate personalized response suggestions using Gemini
    */
-  private async analyzeConversationPatterns(
-    conversations: ConversationMessage[][]
-  ): Promise<ConversationPatterns> {
-    const allMessages = conversations.flat();
-    const userMessages = allMessages.filter((msg) => msg.role === 'user');
+  async generatePersonalizedResponse(
+    userMessage: string,
+    conversationHistory: ConversationMessage[],
+    userProfile: {
+      emotionalProfile: EmotionalProfile;
+      communicationStyle: CommunicationStyle;
+    }
+  ): Promise<string> {
+    try {
+      const historyText = conversationHistory
+        .slice(-5) // Last 5 messages for context
+        .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
+        .join('\n');
 
-    // Average message length
-    const averageMessageLength = userMessages.reduce((sum, msg) => sum + msg.content.length, 0) / userMessages.length;
+      const personalizationPrompt = `
+You are a personalized mental health support AI. Use the user's profile to provide tailored, empathetic responses.
 
-    // Extract common phrases (2-3 word n-grams)
-    const phrases: Record<string, number> = {};
-    userMessages.forEach((msg) => {
-      const words = tokenizer.tokenize(msg.content.toLowerCase()) || [];
-      const filtered = removeStopwords(words, eng);
-      
-      for (let i = 0; i < filtered.length - 1; i++) {
-        const bigram = `${filtered[i]} ${filtered[i + 1]}`;
-        phrases[bigram] = (phrases[bigram] || 0) + 1;
-      }
-    });
+USER PROFILE:
+- Dominant emotions: ${userProfile.emotionalProfile.dominantEmotions.join(', ')}
+- Communication style: ${userProfile.communicationStyle.tone}, ${userProfile.communicationStyle.verbosity}
+- Support needs: ${userProfile.communicationStyle.supportNeeds.join(', ')}
 
-    const commonPhrases = Object.entries(phrases)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 5)
-      .map(([phrase]) => phrase);
+RECENT CONVERSATION:
+${historyText}
 
-    // Time of day pattern
-    const hourCounts: Record<number, number> = {};
-    allMessages.forEach((msg) => {
-      const hour = new Date(msg.timestamp).getHours();
-      hourCounts[hour] = (hourCounts[hour] || 0) + 1;
-    });
+CURRENT USER MESSAGE: "${userMessage}"
 
-    const timeOfDayPattern = Object.entries(hourCounts)
-      .map(([hour, frequency]) => ({
-        hour: parseInt(hour),
-        frequency: frequency / allMessages.length,
-      }))
-      .sort((a, b) => b.frequency - a.frequency)
-      .slice(0, 5);
+Provide a personalized, supportive response that:
+1. Acknowledges their current emotional state
+2. Uses their preferred communication style
+3. Addresses their specific support needs
+4. Offers practical, evidence-based suggestions
+5. Maintains appropriate boundaries as an AI support system
 
-    // Session duration (average time between first and last message in a conversation)
-    const sessionDurations = conversations.map((conv) => {
-      if (conv.length < 2) return 0;
-      const first = conv[0].timestamp;
-      const last = conv[conv.length - 1].timestamp;
-      return (last - first) / 1000; // Convert to seconds
-    });
+Keep the response conversational, empathetic, and focused on recovery support.`;
 
-    const sessionDuration = sessionDurations.reduce((sum, dur) => sum + dur, 0) / sessionDurations.length;
+      const result = await model.generateContent(personalizationPrompt);
+      const response = await result.response;
+      return response.text().trim();
 
-    // Conversation frequency (estimate based on timestamps)
-    const conversationFrequency = conversations.length; // Simplified
-
-    return {
-      averageMessageLength,
-      commonPhrases,
-      timeOfDayPattern,
-      sessionDuration,
-      conversationFrequency,
-    };
+    } catch (error) {
+      console.error('Personalized response generation failed:', error);
+      return "I'm here to support you. How are you feeling right now, and what would be most helpful for you?";
+    }
   }
 
   /**
-   * Generate personalized context summary for AI prompt injection
-   */
-  private generatePersonalizedContext(pattern: Omit<UserPattern, 'personalizedContext'>): string {
-    const { emotionalProfile, topicPreferences, communicationStyle, conversationPatterns } = pattern;
-
-    const contextParts = [];
-
-    // Emotional context
-    if (emotionalProfile.dominantEmotions.length > 0) {
-      contextParts.push(
-        `User's emotional state: Often experiences ${emotionalProfile.dominantEmotions.slice(0, 2).join(' and ')} emotions.`
-      );
-      contextParts.push(
-        `Preferred support style: ${emotionalProfile.responsePreferences.join(', ')}.`
-      );
-    }
-
-    // Topic context
-    if (topicPreferences.interests.length > 0) {
-      contextParts.push(
-        `Topics of interest: ${topicPreferences.interests.slice(0, 3).join(', ')}.`
-      );
-    }
-
-    // Communication style context
-    contextParts.push(
-      `Communication preference: ${communicationStyle.preferredTone} tone, ${communicationStyle.responseLength} responses, ${communicationStyle.languageComplexity} language.`
-    );
-
-    // Pattern context
-    if (conversationPatterns.commonPhrases.length > 0) {
-      contextParts.push(
-        `User often mentions: ${conversationPatterns.commonPhrases.slice(0, 2).join(', ')}.`
-      );
-    }
-
-    // Activity pattern
-    const topHours = conversationPatterns.timeOfDayPattern.slice(0, 2);
-    if (topHours.length > 0) {
-      const hourDescription = topHours
-        .map((h) => {
-          if (h.hour < 12) return 'morning';
-          if (h.hour < 17) return 'afternoon';
-          if (h.hour < 21) return 'evening';
-          return 'night';
-        })
-        .join(' and ');
-      contextParts.push(`Most active during ${hourDescription}.`);
-    }
-
-    return contextParts.join(' ');
-  }
-
-  /**
-   * Determine response preferences based on dominant emotions
-   */
-  private determineResponsePreferences(emotions: string[]): string[] {
-    const preferences: string[] = [];
-
-    if (emotions.includes('anxious') || emotions.includes('stressed')) {
-      preferences.push('calming', 'reassuring', 'grounding techniques');
-    }
-    if (emotions.includes('sad') || emotions.includes('lonely')) {
-      preferences.push('empathetic', 'validating', 'companionship-focused');
-    }
-    if (emotions.includes('confused') || emotions.includes('uncertain')) {
-      preferences.push('clarifying', 'structured', 'step-by-step guidance');
-    }
-    if (emotions.includes('hopeful') || emotions.includes('happy')) {
-      preferences.push('encouraging', 'positive reinforcement', 'growth-oriented');
-    }
-
-    return preferences.length > 0 ? preferences : ['supportive', 'empathetic'];
-  }
-
-  /**
-   * Determine preferred tone based on formality score
-   */
-  private determineTone(
-    formalityScore: number,
-    messageCount: number
-  ): 'formal' | 'casual' | 'empathetic' | 'direct' | 'supportive' {
-    const normalizedScore = formalityScore / messageCount;
-
-    if (normalizedScore > 0.5) return 'formal';
-    if (normalizedScore < -0.5) return 'casual';
-    
-    // Default to supportive/empathetic for mental wellness context
-    return 'supportive';
-  }
-
-  /**
-   * Create embedding vector for a conversation
-   */
-  async createEmbedding(messages: ConversationMessage[]): Promise<number[]> {
-    const userMessages = messages
-      .filter((msg) => msg.role === 'user')
-      .map((msg) => msg.content)
-      .join(' ');
-
-    // Simple embedding using word frequencies (can be enhanced with word2vec)
-    const words = tokenizer.tokenize(userMessages.toLowerCase()) || [];
-    const filtered = removeStopwords(words, eng);
-    
-    const wordFreq: Record<string, number> = {};
-    filtered.forEach((word) => {
-      wordFreq[word] = (wordFreq[word] || 0) + 1;
-    });
-
-    // Create a fixed-size embedding vector (128 dimensions)
-    const embedding = new Array(128).fill(0);
-    const sortedWords = Object.entries(wordFreq)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 64);
-
-    sortedWords.forEach(([word, freq], index) => {
-      embedding[index * 2] = word.charCodeAt(0) / 255; // Simple encoding
-      embedding[index * 2 + 1] = Math.min(freq / 10, 1); // Normalized frequency
-    });
-
-    return embedding;
-  }
-
-  /**
-   * Cleanup models when done
+   * Cleanup (no-op for Gemini)
    */
   async dispose() {
-    if (this.emotionModel) await this.emotionModel.dispose();
-    if (this.topicModel) await this.topicModel.dispose();
-    if (this.styleModel) await this.styleModel.dispose();
+    // No cleanup needed for Gemini
   }
 }
 
