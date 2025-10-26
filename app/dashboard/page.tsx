@@ -12,12 +12,14 @@ import { useLocale } from "@/components/locale-provider"
 import { Sparkles, TrendingUp, Trophy } from "lucide-react"
 import { useQuery, useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
-import { useAuthActions } from "@convex-dev/auth/react"
+import { useUser } from "@clerk/nextjs"
+import { useConvexAuth } from "convex/react"
 import { useEffect } from "react"
 import { useMood } from "@/components/mood-provider"
 
 export default function DashboardPage() {
-  const { signIn } = useAuthActions()
+  const { user, isLoaded } = useUser()
+  const { isAuthenticated } = useConvexAuth()
   const { mood } = useMood()
   const { t } = useLocale()
   const currentUser = useQuery(api.auth.loggedInUser)
@@ -30,7 +32,7 @@ export default function DashboardPage() {
   // Real XP data from Convex backend
   const xpData = useQuery(
     api.xp.getUserXP,
-    currentUser ? { userId: currentUser._id } : "skip"
+    user ? { userId: user.id as any } : "skip"
   )
   
   // Initialize XP for new users
@@ -38,21 +40,12 @@ export default function DashboardPage() {
   
   // Initialize XP if user doesn't have XP data yet
   useEffect(() => {
-    if (currentUser && xpData === null) {
-      initializeXP({ userId: currentUser._id }).catch((error) => {
+    if (user && xpData === null) {
+      initializeXP({ userId: user.id as any }).catch((error) => {
         console.error("Failed to initialize XP:", error)
       })
     }
-  }, [currentUser, xpData, initializeXP])
-
-  // Auto sign-in anonymous users
-  useEffect(() => {
-    if (currentUser === null) {
-      signIn("anonymous").catch((error) => {
-        console.error("Failed to sign in anonymously:", error)
-      })
-    }
-  }, [currentUser, signIn])
+  }, [user, xpData, initializeXP])
 
   // Mood-adaptive welcome messages
   const getMoodMessage = () => {

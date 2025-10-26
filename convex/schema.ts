@@ -2,10 +2,12 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import { authTables } from "@convex-dev/auth/server";
 
-const applicationTables = {
+export default defineSchema({
+  ...authTables,
+
   // User Profiles with Privacy Settings
   userProfiles: defineTable({
-    userId: v.id("users"),
+    userId: v.string(),
     role: v.union(
       v.literal("student"),
       v.literal("moderator"),
@@ -56,7 +58,7 @@ const applicationTables = {
 
   // AI Chatbot Conversations
   conversations: defineTable({
-    userId: v.id("users"),
+    userId: v.string(),
     encryptedMessages: v.string(), // Encrypted message history
     contextSummary: v.string(), // Non-sensitive context for AI
     messageCount: v.number(),
@@ -84,7 +86,7 @@ const applicationTables = {
   // Individual Chat Messages (for streaming and recent access)
   chatMessages: defineTable({
     conversationId: v.id("conversations"),
-    userId: v.id("users"),
+    userId: v.string(),
     role: v.union(v.literal("user"), v.literal("assistant")),
     encryptedContent: v.string(),
     timestamp: v.number(),
@@ -97,7 +99,7 @@ const applicationTables = {
 
   // Dream Analysis Records
   dreamAnalysis: defineTable({
-    userId: v.id("users"),
+    userId: v.string(),
     encryptedMetadata: v.string(), // Encrypted dream details
     emotionalTags: v.array(v.string()),
     stressIndicators: v.array(v.string()),
@@ -119,8 +121,8 @@ const applicationTables = {
 
   // Peer Matching System
   peerMatches: defineTable({
-    user1Id: v.id("users"),
-    user2Id: v.optional(v.id("users")), // Optional for pending matches waiting for someone to join
+    user1Id: v.string(),
+    user2Id: v.optional(v.string()), // Optional for pending matches waiting for someone to join
     matchScore: v.number(),
     matchCriteria: v.object({
       moodCompatibility: v.number(),
@@ -149,7 +151,7 @@ const applicationTables = {
   // Peer Messages (End-to-End Encrypted)
   peerMessages: defineTable({
     matchId: v.id("peerMatches"),
-    senderId: v.id("users"),
+    senderId: v.string(),
     encryptedContent: v.string(), // AES-GCM encrypted message
     iv: v.string(), // Initialization vector for AES-GCM
     ephemeralPublicKey: v.optional(v.string()), // Sender's ephemeral public key (for first message)
@@ -169,7 +171,7 @@ const applicationTables = {
     autoBlocked: v.optional(v.boolean()), // Auto-blocked by moderation system
     reviewedByAdmin: v.optional(v.boolean()),
     reviewedAt: v.optional(v.number()),
-    reviewedBy: v.optional(v.id("users")),
+    reviewedBy: v.optional(v.string()),
     deliveryStatus: v.union(v.literal("sent"), v.literal("delivered"), v.literal("read")),
   })
     .index("by_match_id", ["matchId"])
@@ -179,7 +181,7 @@ const applicationTables = {
 
   // Crisis Events
   crisisEvents: defineTable({
-    userId: v.id("users"),
+    userId: v.string(),
     source: v.union(
       v.literal("chat"),
       v.literal("dream_analysis"),
@@ -210,7 +212,7 @@ const applicationTables = {
       v.literal("resolved"),
       v.literal("escalated")
     ),
-    assignedResponderId: v.optional(v.id("users")),
+    assignedResponderId: v.optional(v.string()),
     detectedAt: v.number(),
     acknowledgedAt: v.optional(v.number()),
     resolvedAt: v.optional(v.number()),
@@ -226,8 +228,8 @@ const applicationTables = {
 
   // Audit Logs
   auditLogs: defineTable({
-    userId: v.optional(v.id("users")),
-    actorId: v.optional(v.id("users")),
+    userId: v.optional(v.string()),
+    actorId: v.optional(v.string()),
     action: v.string(),
     resourceType: v.string(),
     resourceId: v.optional(v.string()),
@@ -244,7 +246,7 @@ const applicationTables = {
 
   // Rate Limiting
   rateLimits: defineTable({
-    userId: v.id("users"),
+    userId: v.string(),
     endpoint: v.string(),
     requestCount: v.number(),
     windowStart: v.number(),
@@ -272,7 +274,7 @@ const applicationTables = {
 
   // Data Export Requests
   dataExportRequests: defineTable({
-    userId: v.id("users"),
+    userId: v.string(),
     requestType: v.union(v.literal("gdpr"), v.literal("ccpa"), v.literal("user_initiated")),
     status: v.union(
       v.literal("pending"),
@@ -290,7 +292,7 @@ const applicationTables = {
 
   // Data Deletion Requests
   dataDeletionRequests: defineTable({
-    userId: v.id("users"),
+    userId: v.string(),
     requestType: v.union(v.literal("gdpr"), v.literal("ccpa"), v.literal("user_initiated")),
     status: v.union(
       v.literal("pending"),
@@ -311,11 +313,11 @@ const applicationTables = {
   moderationQueue: defineTable({
     contentType: v.union(v.literal("peer_message"), v.literal("chat_message"), v.literal("report")),
     contentId: v.string(),
-    userId: v.optional(v.id("users")), // User who sent the content
+    userId: v.optional(v.string()), // User who sent the content
     matchId: v.optional(v.id("peerMatches")), // For peer messages
     decryptedContent: v.optional(v.string()), // Admin-decrypted content for review
     originalText: v.optional(v.string()), // Pre-moderation text
-    reportedBy: v.optional(v.id("users")),
+    reportedBy: v.optional(v.string()),
     reason: v.string(),
     violations: v.array(v.object({
       type: v.string(),
@@ -339,7 +341,7 @@ const applicationTables = {
       v.literal("resolved"),
       v.literal("escalated")
     ),
-    assignedModeratorId: v.optional(v.id("users")),
+    assignedModeratorId: v.optional(v.string()),
     action: v.optional(v.union(
       v.literal("approved"),
       v.literal("blocked"),
@@ -359,7 +361,7 @@ const applicationTables = {
 
   // Daily Check-ins for Streak Tracking
   dailyCheckins: defineTable({
-    userId: v.id("users"),
+    userId: v.string(),
     mood: v.union(v.literal("neutral"), v.literal("anxious"), v.literal("low"), v.literal("lonely")),
     checkinDate: v.string(), // YYYY-MM-DD format for easy querying
     timestamp: v.number(),
@@ -371,7 +373,7 @@ const applicationTables = {
 
   // User Insights and Analytics
   userInsights: defineTable({
-    userId: v.id("users"),
+    userId: v.string(),
     insightType: v.union(
       v.literal("mood_pattern"),
       v.literal("activity_streak"),
@@ -389,468 +391,370 @@ const applicationTables = {
     .index("by_user_and_type", ["userId", "insightType"])
     .index("by_generated_at", ["generatedAt"]),
 
-  // User Conversation Patterns for LSTM Personalization
-  userConversationPatterns: defineTable({
-    userId: v.id("users"),
-    emotionalProfile: v.object({
-      dominantEmotions: v.array(v.string()), // e.g., ["anxious", "hopeful", "stressed"]
-      emotionalTrends: v.array(v.object({
-        emotion: v.string(),
-        frequency: v.number(),
-        recentOccurrences: v.array(v.number()), // timestamps
-      })),
-      responsePreferences: v.array(v.string()), // e.g., ["empathetic", "solution-focused"]
-    }),
-    topicPreferences: v.object({
-      interests: v.array(v.string()), // Topics user engages with
-      avoidances: v.array(v.string()), // Topics user doesn't engage with
-      favoriteTopics: v.array(v.object({
-        topic: v.string(),
-        engagementScore: v.number(),
-      })),
-    }),
-    communicationStyle: v.object({
-      tone: v.string(),
-      verbosity: v.string(),
-      preferredResponseLength: v.string(),
-      communicationPatterns: v.array(v.string()),
-      supportNeeds: v.array(v.string()),
-    }),
-    personalizationEnabled: v.boolean(),
-    conversationCount: v.number(),
-    lastUpdated: v.number(),
-    version: v.number(),
-  })
-    .index("by_user_id", ["userId"])
-    .index("by_last_updated", ["lastUpdated"]),
-
-  // Conversation Embeddings for LSTM Processing
-  conversationEmbeddings: defineTable({
-    userId: v.id("users"),
-    conversationId: v.id("conversations"),
-    // Store embedding as string (JSON array) due to Convex limitations
-    embeddingVector: v.string(), // JSON stringified number array
-    timestamp: v.number(),
-    emotionalState: v.string(),
-    topics: v.array(v.string()),
-    sentimentScore: v.number(),
-    messageCount: v.number(),
-    sessionDuration: v.number(),
-  })
-    .index("by_user_id", ["userId"])
-    .index("by_conversation", ["conversationId"])
-    .index("by_timestamp", ["timestamp"]),
-
-  // Pattern Learning Sessions (tracks LSTM model updates)
-  patternLearningSessions: defineTable({
-    userId: v.id("users"),
-    conversationsAnalyzed: v.number(),
-    patternsExtracted: v.array(v.object({
-      patternType: v.string(),
-      confidence: v.number(),
-      description: v.string(),
-    })),
-    modelVersion: v.string(),
-    processingTime: v.number(), // milliseconds
-    timestamp: v.number(),
-    success: v.boolean(),
-    errorMessage: v.optional(v.string()),
-  })
-    .index("by_user_id", ["userId"])
-    .index("by_timestamp", ["timestamp"]),
-
-  // Professional Support System
-  professionals: defineTable({
-    userId: v.id("users"),
-    name: v.string(),
-    title: v.string(), // e.g., "Clinical Psychologist", "Psychiatrist"
-    specializations: v.array(v.string()), // e.g., ["Addiction Recovery", "CBT"]
-    languages: v.array(v.string()),
-    experience: v.number(), // years of experience
-    qualifications: v.array(v.string()), // e.g., ["Ph.D. Psychology", "Licensed Clinical Psychologist"]
-    bio: v.string(),
-    profileImage: v.optional(v.string()),
-    
-    // Razorpay Integration
-    razorpaySubAccountId: v.optional(v.string()), // Razorpay sub-account ID
-    bankAccount: v.optional(v.object({
-      accountNumber: v.string(),
-      ifscCode: v.string(),
-      accountHolderName: v.string(),
-    })),
-    
-    // Session Pricing (in paise, 1 INR = 100 paise)
-    sessionPrices: v.object({
-      video: v.number(),
-      phone: v.number(),
-      chat: v.number(),
-    }),
-    
-    // Availability
-    availability: v.array(v.object({
-      day: v.union(
-        v.literal("monday"),
-        v.literal("tuesday"),
-        v.literal("wednesday"),
-        v.literal("thursday"),
-        v.literal("friday"),
-        v.literal("saturday"),
-        v.literal("sunday")
-      ),
-      slots: v.array(v.object({
-        start: v.string(), // "HH:MM" format
-        end: v.string(),
-      })),
-    })),
-    
-    // Verification
-    verified: v.boolean(),
-    verifiedAt: v.optional(v.number()),
-    verifiedBy: v.optional(v.id("users")),
-    
-    // Stats
-    totalSessions: v.number(),
-    averageRating: v.number(),
-    totalReviews: v.number(),
-    
-    // Status
-    status: v.union(
-      v.literal("pending"),
-      v.literal("active"),
-      v.literal("inactive"),
-      v.literal("suspended")
-    ),
-    
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_user_id", ["userId"])
-    .index("by_status", ["status"])
-    .index("by_verified", ["verified"])
-    .index("by_specializations", ["specializations"]),
-
-  // Booking System
-  bookings: defineTable({
-    userId: v.id("users"),
-    professionalId: v.id("professionals"),
-    
-    // Session Details
-    sessionType: v.union(v.literal("video"), v.literal("phone"), v.literal("chat")),
-    scheduledAt: v.number(),
-    duration: v.number(), // minutes
-    
-    // Payment Details
-    amount: v.number(), // in paise
-    currency: v.string(), // "INR"
-    razorpayOrderId: v.optional(v.string()),
-    razorpayPaymentId: v.optional(v.string()),
-    razorpaySignature: v.optional(v.string()),
-    
-    // Status
-    status: v.union(
-      v.literal("pending"),
-      v.literal("confirmed"),
-      v.literal("completed"),
-      v.literal("cancelled"),
-      v.literal("refunded")
-    ),
-    
-    // Session Data
-    meetingLink: v.optional(v.string()), // For video sessions
-    notes: v.optional(v.string()),
-    
-    // Timestamps
-    createdAt: v.number(),
-    confirmedAt: v.optional(v.number()),
-    completedAt: v.optional(v.number()),
-    cancelledAt: v.optional(v.number()),
-    
-    // Cancellation
-    cancellationReason: v.optional(v.string()),
-    cancelledBy: v.optional(v.union(v.literal("user"), v.literal("professional"), v.literal("system"))),
-  })
-    .index("by_user_id", ["userId"])
-    .index("by_professional_id", ["professionalId"])
-    .index("by_status", ["status"])
-    .index("by_scheduled_at", ["scheduledAt"])
-    .index("by_razorpay_order", ["razorpayOrderId"]),
-
-  // Transactions
-  transactions: defineTable({
-    bookingId: v.id("bookings"),
-    userId: v.id("users"),
-    professionalId: v.id("professionals"),
-    
-    // Payment Details
-    razorpayOrderId: v.string(),
-    razorpayPaymentId: v.optional(v.string()),
-    amount: v.number(), // in paise
-    currency: v.string(),
-    
-    // Split Details
-    platformFee: v.number(), // in paise (15%)
-    professionalAmount: v.number(), // in paise (85%)
-    
-    // Status
-    status: v.union(
-      v.literal("created"),
-      v.literal("authorized"),
-      v.literal("captured"),
-      v.literal("refunded"),
-      v.literal("failed")
-    ),
-    
-    // Timestamps
-    createdAt: v.number(),
-    capturedAt: v.optional(v.number()),
-    refundedAt: v.optional(v.number()),
-    
-    // Additional Info
-    paymentMethod: v.optional(v.string()),
-    errorCode: v.optional(v.string()),
-    errorDescription: v.optional(v.string()),
-  })
-    .index("by_booking_id", ["bookingId"])
-    .index("by_user_id", ["userId"])
-    .index("by_professional_id", ["professionalId"])
-    .index("by_razorpay_order", ["razorpayOrderId"])
-    .index("by_status", ["status"])
-    .index("by_created_at", ["createdAt"]),
-
-  // Professional Reviews
-  professionalReviews: defineTable({
-    bookingId: v.id("bookings"),
-    userId: v.id("users"),
-    professionalId: v.id("professionals"),
-    rating: v.number(), // 1-5
-    review: v.optional(v.string()),
-    createdAt: v.number(),
-  })
-    .index("by_professional_id", ["professionalId"])
-    .index("by_user_id", ["userId"])
-    .index("by_booking_id", ["bookingId"]),
-
-  // ============================================
-  // XP & GAMIFICATION SYSTEM
-  // ============================================
-
-  // User XP & Level Data
+  // User XP and Gamification System
   userXP: defineTable({
-    userId: v.id("users"),
-    totalXP: v.number(), // All-time XP earned
-    currentLevelXP: v.number(), // XP in current level
-    level: v.number(), // Current level (1-100+)
-    prestige: v.number(), // Prestige level (resets at max level)
-    
-    // Streaks
-    dailyStreak: v.number(), // Consecutive days
-    weeklyStreak: v.number(), // Consecutive weeks
+    userId: v.string(),
+    totalXP: v.number(),
+    currentLevelXP: v.number(),
+    level: v.number(),
+    prestige: v.number(),
+    dailyStreak: v.number(),
+    weeklyStreak: v.number(),
     longestDailyStreak: v.number(),
-    lastActivityDate: v.string(), // ISO date for streak tracking
+    lastActivityDate: v.string(),
     lastStreakCheckDate: v.string(),
-    
-    // Activity Tracking
-    totalActions: v.number(), // Total interactions
-    todayActions: v.number(), // Today's interaction count
+    totalActions: v.number(),
+    todayActions: v.number(),
     weeklyActions: v.number(),
     monthlyActions: v.number(),
-    
-    // Bonus Multipliers
-    xpMultiplier: v.number(), // Temporary boost (e.g., 1.5x, 2x)
-    multiplierExpiresAt: v.optional(v.number()),
-    
-    // Milestones
-    milestonesReached: v.array(v.string()), // Array of milestone IDs
-    nextMilestone: v.optional(v.string()),
-    
-    // Statistics
+    xpMultiplier: v.number(),
+    milestonesReached: v.array(v.string()),
     totalBreathingSessions: v.number(),
     totalChatMessages: v.number(),
     totalPeerChats: v.number(),
     totalCheckIns: v.number(),
     totalArticlesRead: v.number(),
     positiveAIResponses: v.number(),
-    
-    // Timestamps
     createdAt: v.number(),
     updatedAt: v.number(),
     lastXPGainedAt: v.number(),
   })
-    .index("by_user_id", ["userId"])
-    .index("by_level", ["level"])
-    .index("by_total_xp", ["totalXP"])
-    .index("by_daily_streak", ["dailyStreak"]),
+    .index("by_user_id", ["userId"]),
 
-  // XP Transactions (History of XP gains)
+  // Bookings System
+  bookings: defineTable({
+    userId: v.string(),
+    professionalId: v.id("professionals"),
+    sessionType: v.union(v.literal("chat"), v.literal("video"), v.literal("phone")),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("confirmed"),
+      v.literal("in_progress"),
+      v.literal("completed"),
+      v.literal("cancelled"),
+      v.literal("no_show")
+    ),
+    scheduledAt: v.number(),
+    duration: v.number(), // in minutes
+    amount: v.number(),
+    currency: v.string(),
+    notes: v.optional(v.string()),
+    meetingLink: v.optional(v.string()),
+    cancellationReason: v.optional(v.string()),
+    cancelledAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+    confirmedAt: v.optional(v.number()),
+    cancelledBy: v.optional(v.string()),
+    razorpayOrderId: v.optional(v.string()),
+    razorpayPaymentId: v.optional(v.string()),
+    razorpaySignature: v.optional(v.string()),
+    rating: v.optional(v.number()),
+    review: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_professional_id", ["professionalId"])
+    .index("by_status", ["status"])
+    .index("by_scheduled_at", ["scheduledAt"]),
+
+  // Professionals Directory
+  professionals: defineTable({
+    userId: v.string(),
+    name: v.string(),
+    title: v.string(),
+    verified: v.boolean(),
+    status: v.union(v.literal("active"), v.literal("inactive"), v.literal("suspended")),
+    specializations: v.array(v.string()),
+    languages: v.array(v.string()),
+    experience: v.number(), // years of experience
+    licenseNumber: v.optional(v.string()),
+    licenseExpiry: v.optional(v.number()),
+    hourlyRate: v.number(),
+    sessionPrices: v.object({
+      chat: v.number(),
+      video: v.number(),
+      phone: v.number(),
+    }),
+    currency: v.string(),
+    availability: v.array(
+      v.object({
+        day: v.union(
+          v.literal("monday"),
+          v.literal("tuesday"),
+          v.literal("wednesday"),
+          v.literal("thursday"),
+          v.literal("friday"),
+          v.literal("saturday"),
+          v.literal("sunday")
+        ),
+        slots: v.array(
+          v.object({
+            start: v.string(),
+            end: v.string(),
+          })
+        ),
+      })
+    ),
+    bio: v.string(),
+    profileImage: v.optional(v.string()),
+    qualifications: v.array(v.string()),
+    approach: v.string(),
+    emergencyContact: v.boolean(),
+    acceptsInsurance: v.boolean(),
+    insuranceProviders: v.optional(v.array(v.string())),
+    bankAccount: v.optional(
+      v.object({
+        accountNumber: v.string(),
+        ifscCode: v.string(),
+        accountHolderName: v.string(),
+      })
+    ),
+    razorpaySubAccountId: v.optional(v.string()),
+    rating: v.number(),
+    reviewCount: v.number(),
+    totalSessions: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_verified", ["verified"])
+    .index("by_specializations", ["specializations"]),
+
+  // Payment Transactions
+  transactions: defineTable({
+    userId: v.string(),
+    bookingId: v.id("bookings"),
+    professionalId: v.id("professionals"),
+    amount: v.number(),
+    platformFee: v.number(),
+    professionalAmount: v.number(),
+    currency: v.string(),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("processing"),
+      v.literal("completed"),
+      v.literal("failed"),
+      v.literal("refunded"),
+      v.literal("cancelled"),
+      v.literal("created")
+    ),
+    paymentMethod: v.union(v.literal("razorpay"), v.literal("stripe"), v.literal("paypal")),
+    razorpayOrderId: v.optional(v.string()),
+    razorpayPaymentId: v.optional(v.string()),
+    razorpaySignature: v.optional(v.string()),
+    refundId: v.optional(v.string()),
+    refundAmount: v.optional(v.number()),
+    refundReason: v.optional(v.string()),
+    processedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_booking_id", ["bookingId"])
+    .index("by_professional_id", ["professionalId"])
+    .index("by_razorpay_order", ["razorpayOrderId"])
+    .index("by_status", ["status"]),
+
+  // User Conversation Patterns for AI Personalization
+  userConversationPatterns: defineTable({
+    userId: v.string(),
+    patterns: v.string(), // JSON string of conversation patterns
+    version: v.number(),
+    personalizationEnabled: v.boolean(),
+    emotionalProfile: v.optional(v.object({
+      dominantEmotions: v.array(v.string()),
+      emotionalTrends: v.array(v.object({
+        emotion: v.string(),
+        frequency: v.number(),
+        recentOccurrences: v.array(v.number()),
+      })),
+      responsePreferences: v.array(v.string()),
+    })),
+    communicationStyle: v.optional(v.object({
+      tone: v.string(),
+      verbosity: v.string(),
+      preferredResponseLength: v.string(),
+      communicationPatterns: v.array(v.string()),
+      supportNeeds: v.array(v.string()),
+    })),
+    preferredTopics: v.optional(v.array(v.string())),
+    avoidedTopics: v.optional(v.array(v.string())),
+    crisisIndicators: v.optional(v.array(v.string())),
+    lastUpdated: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_user_id", ["userId"]),
+
+  // Conversation Embeddings for Semantic Search
+  conversationEmbeddings: defineTable({
+    userId: v.string(),
+    conversationId: v.id("conversations"),
+    messageIndex: v.number(),
+    embedding: v.array(v.number()), // Vector embedding
+    contentHash: v.string(),
+    messageCount: v.optional(v.number()),
+    timestamp: v.optional(v.number()),
+    sentimentScore: v.optional(v.number()),
+    sessionDuration: v.optional(v.number()),
+    embeddingVector: v.optional(v.string()),
+    emotionalState: v.optional(v.string()),
+    topics: v.optional(v.array(v.string())),
+    createdAt: v.number(),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_conversation", ["conversationId"]),
+
+  // Pattern Learning Sessions
+  patternLearningSessions: defineTable({
+    userId: v.string(),
+    sessionData: v.string(), // JSON string of learning session data
+    patternsLearned: v.number(),
+    accuracy: v.number(),
+    duration: v.number(),
+    completedAt: v.number(),
+    errorMessage: v.optional(v.string()),
+    timestamp: v.optional(v.number()),
+    success: v.optional(v.boolean()),
+    conversationsAnalyzed: v.optional(v.number()),
+    patternsExtracted: v.optional(v.array(v.object({
+      description: v.string(),
+      confidence: v.number(),
+      patternType: v.string(),
+    }))),
+    modelVersion: v.optional(v.string()),
+    processingTime: v.optional(v.number()),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_completed_at", ["completedAt"]),
+
+  // XP Boosts and Multipliers
+  xpBoosts: defineTable({
+    userId: v.string(),
+    boostType: v.union(
+      v.literal("streak_freeze"),
+      v.literal("xp_multiplier"),
+      v.literal("bonus_points")
+    ),
+    multiplier: v.optional(v.number()),
+    bonusXP: v.optional(v.number()),
+    isActive: v.boolean(),
+    activatedAt: v.optional(v.number()),
+    expiresAt: v.optional(v.number()),
+    usedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_boost_type", ["boostType"])
+    .index("by_is_active", ["isActive"]),
+
+  // XP Transaction History
   xpTransactions: defineTable({
-    userId: v.id("users"),
-    amount: v.number(), // XP gained (or lost)
+    userId: v.string(),
+    amount: v.number(),
+    reason: v.string(),
     source: v.union(
       v.literal("daily_checkin"),
+      v.literal("chat_message"),
+      v.literal("breathing_session"),
+      v.literal("peer_chat"),
+      v.literal("article_read"),
+      v.literal("achievement"),
+      v.literal("bonus"),
+      v.literal("streak_bonus"),
       v.literal("breathing_exercise"),
       v.literal("ai_chat_positive"),
       v.literal("ai_chat_message"),
       v.literal("peer_chat_message"),
       v.literal("peer_chat_session"),
-      v.literal("article_read"),
       v.literal("dream_journal"),
-      v.literal("mood_log"),
-      v.literal("streak_bonus"),
-      v.literal("milestone_reward"),
-      v.literal("achievement_unlock"),
-      v.literal("daily_challenge"),
-      v.literal("referral"),
-      v.literal("profile_complete"),
-      v.literal("first_time_bonus"),
-      v.literal("random_bonus"),
+      v.literal("meditation_session"),
+      v.literal("journal_entry"),
+      v.literal("mood_tracking"),
+      v.literal("goal_achievement"),
+      v.literal("streak_maintenance"),
       v.literal("admin_grant")
     ),
-    multiplier: v.number(), // Applied multiplier (default 1.0)
-    description: v.string(), // Human-readable description
-    metadata: v.optional(v.object({
-      activityId: v.optional(v.string()),
+    metadata: v.optional(v.union(v.string(), v.object({
       achievementId: v.optional(v.string()),
+      activityId: v.optional(v.string()),
       bonusReason: v.optional(v.string()),
-    })),
-    levelBefore: v.number(),
-    levelAfter: v.number(),
-    timestamp: v.number(),
+      multiplier: v.optional(v.number()),
+      description: v.optional(v.string()),
+      levelBefore: v.optional(v.number()),
+      levelAfter: v.optional(v.number()),
+      timestamp: v.optional(v.number()),
+    }))),
+    createdAt: v.number(),
   })
     .index("by_user_id", ["userId"])
-    .index("by_timestamp", ["timestamp"])
-    .index("by_source", ["source"]),
+    .index("by_created_at", ["createdAt"]),
 
-  // Achievements & Badges
+  // Achievements System
   achievements: defineTable({
-    userId: v.id("users"),
-    achievementId: v.string(), // Unique achievement identifier
+    userId: v.string(),
+    achievementId: v.string(),
+    title: v.string(),
+    description: v.string(),
+    icon: v.string(),
     category: v.union(
-      v.literal("breathing"),
+      v.literal("streak"),
+      v.literal("engagement"),
+      v.literal("wellness"),
+      v.literal("social"),
+      v.literal("milestone"),
       v.literal("chat"),
       v.literal("peer_support"),
+      v.literal("breathing"),
       v.literal("streaks"),
       v.literal("milestones"),
       v.literal("exploration"),
       v.literal("special")
     ),
-    tier: v.union(
-      v.literal("bronze"),
-      v.literal("silver"),
-      v.literal("gold"),
-      v.literal("platinum"),
-      v.literal("diamond")
-    ),
-    title: v.string(),
-    description: v.string(),
-    icon: v.string(), // Emoji or icon name
     xpReward: v.number(),
     unlockedAt: v.number(),
-    progress: v.optional(v.number()), // For progressive achievements (0-100)
-    isSecret: v.boolean(), // Hidden until unlocked
-    rarity: v.union(
-      v.literal("common"),
-      v.literal("uncommon"),
-      v.literal("rare"),
-      v.literal("epic"),
-      v.literal("legendary")
-    ),
+    claimed: v.boolean(),
+    claimedAt: v.optional(v.number()),
   })
     .index("by_user_id", ["userId"])
-    .index("by_category", ["category"])
-    .index("by_unlocked_at", ["unlockedAt"])
-    .index("by_achievement_id", ["achievementId"]),
+    .index("by_achievement_id", ["achievementId"])
+    .index("by_category", ["category"]),
 
-  // Daily Challenges
-  dailyChallenges: defineTable({
-    userId: v.id("users"),
-    challengeId: v.string(), // Daily rotating challenge
-    title: v.string(),
-    description: v.string(),
-    type: v.union(
-      v.literal("breathing"),
-      v.literal("chat"),
-      v.literal("peer"),
-      v.literal("mood"),
-      v.literal("streak"),
-      v.literal("explore")
-    ),
-    targetValue: v.number(), // Goal to reach
-    currentProgress: v.number(), // Current progress
-    xpReward: v.number(),
-    bonusXPReward: v.number(), // Extra XP for perfect completion
-    status: v.union(
-      v.literal("active"),
-      v.literal("completed"),
-      v.literal("expired")
-    ),
-    difficulty: v.union(
-      v.literal("easy"),
-      v.literal("medium"),
-      v.literal("hard")
-    ),
-    expiresAt: v.number(), // End of day timestamp
-    completedAt: v.optional(v.number()),
-    createdAt: v.number(),
-  })
-    .index("by_user_id", ["userId"])
-    .index("by_status", ["status"])
-    .index("by_expires_at", ["expiresAt"]),
-
-  // Leaderboards (Anonymous)
+  // Leaderboard Entries
   leaderboardEntries: defineTable({
-    userId: v.id("users"),
-    anonymousName: v.string(), // Generated anonymous name
-    avatar: v.string(), // Random avatar identifier
-    period: v.union(
-      v.literal("daily"),
-      v.literal("weekly"),
-      v.literal("monthly"),
-      v.literal("all_time")
-    ),
-    metric: v.union(
-      v.literal("total_xp"),
-      v.literal("level"),
-      v.literal("streak"),
-      v.literal("achievements")
-    ),
+    userId: v.string(),
+    period: v.union(v.literal("daily"), v.literal("weekly"), v.literal("monthly"), v.literal("all_time")),
+    metric: v.union(v.literal("xp"), v.literal("streak"), v.literal("achievements"), v.literal("sessions"), v.literal("total_xp")),
     value: v.number(),
     rank: v.number(),
     lastUpdated: v.number(),
+    anonymousName: v.optional(v.string()),
+    avatar: v.optional(v.string()),
   })
     .index("by_period_and_metric", ["period", "metric"])
-    .index("by_rank", ["rank"])
     .index("by_user_id", ["userId"]),
 
-  // XP Boosts & Power-ups
-  xpBoosts: defineTable({
-    userId: v.id("users"),
-    boostType: v.union(
-      v.literal("xp_multiplier"), // 2x, 3x XP
-      v.literal("streak_freeze"), // Protect streak
-      v.literal("instant_level"), // Gain instant level
-      v.literal("random_achievement"), // Unlock random achievement
-      v.literal("bonus_challenge") // Extra daily challenge
+  // Daily Challenges
+  dailyChallenges: defineTable({
+    userId: v.string(),
+    challengeType: v.union(
+      v.literal("checkin"),
+      v.literal("chat"),
+      v.literal("breathing"),
+      v.literal("reading"),
+      v.literal("peer_support")
     ),
-    multiplier: v.optional(v.number()), // For XP multipliers
-    duration: v.optional(v.number()), // Duration in seconds
-    isActive: v.boolean(),
-    activatedAt: v.optional(v.number()),
+    target: v.number(),
+    progress: v.number(),
+    completed: v.boolean(),
+    completedAt: v.optional(v.number()),
+    xpReward: v.number(),
+    date: v.string(), // YYYY-MM-DD
     expiresAt: v.optional(v.number()),
-    source: v.union(
-      v.literal("earned"),
-      v.literal("purchased"),
-      v.literal("milestone"),
-      v.literal("gift")
-    ),
-    usedAt: v.optional(v.number()),
+    createdAt: v.number(),
   })
     .index("by_user_id", ["userId"])
-    .index("by_is_active", ["isActive"])
-    .index("by_expires_at", ["expiresAt"]),
-};
-
-export default defineSchema({
-  ...authTables,
-  ...applicationTables,
+    .index("by_date", ["date"])
+    .index("by_completed", ["completed"]),
 });
 

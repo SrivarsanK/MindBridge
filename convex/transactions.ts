@@ -36,7 +36,9 @@ export const createTransaction = mutation({
       platformFee,
       professionalAmount,
       status: "created",
+      paymentMethod: "razorpay",
       createdAt: Date.now(),
+      updatedAt: Date.now(),
     });
 
     return transactionId;

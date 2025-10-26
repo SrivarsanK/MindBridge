@@ -1,6 +1,5 @@
 import { v } from "convex/values";
 import { mutation, query, internalMutation } from "./_generated/server";
-import { getAuthUserId } from "@convex-dev/auth/server";
 import { Id } from "./_generated/dataModel";
 
 // Create or update user profile
@@ -29,13 +28,15 @@ export const createOrUpdateProfile = mutation({
     console.log('[createOrUpdateProfile] Args:', JSON.stringify(args));
     
     try {
-      const userId = await getAuthUserId(ctx);
-      console.log('[createOrUpdateProfile] User ID:', userId);
+      const identity = await ctx.auth.getUserIdentity();
+      console.log('[createOrUpdateProfile] User identity:', identity);
       
-      if (!userId) {
-        console.error('[createOrUpdateProfile] Not authenticated - no userId');
+      if (!identity) {
+        console.error('[createOrUpdateProfile] Not authenticated - no identity');
         throw new Error("Not authenticated");
       }
+
+      const userId = identity.subject as Id<"users">;
 
       const existingProfile = await ctx.db
         .query("userProfiles")
@@ -133,10 +134,12 @@ export const createOrUpdateProfile = mutation({
 export const getCurrentProfile = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
       return null;
     }
+
+    const userId = identity.subject as Id<"users">;
 
     const profile = await ctx.db
       .query("userProfiles")
@@ -158,10 +161,12 @@ export const updatePrivacySettings = mutation({
     }),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
       throw new Error("Not authenticated");
     }
+
+    const userId = identity.subject as Id<"users">;
 
     const profile = await ctx.db
       .query("userProfiles")
@@ -196,10 +201,12 @@ export const updatePrivacySettings = mutation({
 export const updateLastActive = mutation({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
       return null;
     }
+
+    const userId = identity.subject as Id<"users">;
 
     const profile = await ctx.db
       .query("userProfiles")

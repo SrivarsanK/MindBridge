@@ -6,6 +6,7 @@
 
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { Id } from "./_generated/dataModel";
 import {
   XP_VALUES,
   getLevelFromXP,
@@ -28,13 +29,14 @@ import {
  */
 export const initializeUserXP = mutation({
   args: {
-    userId: v.id("users"),
+    userId: v.string(),
   },
   handler: async (ctx, args) => {
+    const userId = args.userId as Id<"users">;
     // Check if already initialized
     const existing = await ctx.db
       .query("userXP")
-      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
       .first();
 
     if (existing) {
@@ -43,7 +45,7 @@ export const initializeUserXP = mutation({
 
     // Create new XP record
     const xpId = await ctx.db.insert("userXP", {
-      userId: args.userId,
+      userId: userId,
       totalXP: 0,
       currentLevelXP: 0,
       level: 1,
@@ -72,9 +74,7 @@ export const initializeUserXP = mutation({
 
     // Create leaderboard entry
     await ctx.db.insert("leaderboardEntries", {
-      userId: args.userId,
-      anonymousName: generateAnonymousName(),
-      avatar: generateRandomAvatar(),
+      userId,
       period: "all_time",
       metric: "total_xp",
       value: 0,
@@ -95,25 +95,24 @@ export const initializeUserXP = mutation({
  */
 export const awardXP = mutation({
   args: {
-    userId: v.id("users"),
+    userId: v.string(),
     source: v.union(
       v.literal("daily_checkin"),
-      v.literal("breathing_exercise"),
+      v.literal("breathing_session"),
       v.literal("ai_chat_positive"),
-      v.literal("ai_chat_message"),
-      v.literal("peer_chat_message"),
-      v.literal("peer_chat_session"),
+      v.literal("chat_message"),
+      v.literal("peer_chat"),
+      v.literal("peer_chat"),
       v.literal("article_read"),
-      v.literal("dream_journal"),
-      v.literal("mood_log"),
+      v.literal("bonus"),
       v.literal("streak_bonus"),
-      v.literal("milestone_reward"),
-      v.literal("achievement_unlock"),
-      v.literal("daily_challenge"),
-      v.literal("referral"),
-      v.literal("profile_complete"),
-      v.literal("first_time_bonus"),
-      v.literal("random_bonus"),
+      v.literal("bonus"),
+      v.literal("achievement"),
+      v.literal("bonus"),
+      v.literal("bonus"),
+      v.literal("bonus"),
+      v.literal("bonus"),
+      v.literal("bonus"),
       v.literal("admin_grant")
     ),
     amount: v.number(),
@@ -125,10 +124,11 @@ export const awardXP = mutation({
     })),
   },
   handler: async (ctx, args) => {
+    const userId = args.userId as Id<"users">;
     // Get user XP data
     let userXP = await ctx.db
       .query("userXP")
-      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
       .first();
 
     if (!userXP) {
@@ -141,7 +141,7 @@ export const awardXP = mutation({
     // Check for active XP boost
     const activeBoost = await ctx.db
       .query("xpBoosts")
-      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
       .filter((q) => 
         q.and(
           q.eq(q.field("isActive"), true),
@@ -209,15 +209,12 @@ export const awardXP = mutation({
 
     // Create XP transaction record
     await ctx.db.insert("xpTransactions", {
-      userId: args.userId,
+      userId: userId,
       amount: finalXP,
       source: args.source,
-      multiplier,
-      description: args.description || `Earned ${finalXP} XP from ${args.source}`,
+      reason: args.description || `Earned ${finalXP} XP from ${args.source}`,
+      createdAt: Date.now(),
       metadata: args.metadata,
-      levelBefore: userXP.level,
-      levelAfter: newLevel,
-      timestamp: Date.now(),
     });
 
     // Check for level up rewards
@@ -252,12 +249,13 @@ export const awardXP = mutation({
  */
 export const updateStreak = mutation({
   args: {
-    userId: v.id("users"),
+    userId: v.string(),
   },
   handler: async (ctx, args) => {
+    const userId = args.userId as Id<"users">;
     const userXP = await ctx.db
       .query("userXP")
-      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
       .first();
 
     if (!userXP) throw new Error("User XP not found");
@@ -279,7 +277,7 @@ export const updateStreak = mutation({
       // Streak broken - check for freeze
       const freezeBoost = await ctx.db
         .query("xpBoosts")
-        .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
+        .withIndex("by_user_id", (q) => q.eq("userId", userId))
         .filter((q) =>
           q.and(
             q.eq(q.field("boostType"), "streak_freeze"),
@@ -325,14 +323,11 @@ export const updateStreak = mutation({
       });
       
       await ctx.db.insert("xpTransactions", {
-        userId: args.userId,
+        userId: userId,
         amount: bonusXP,
         source: "streak_bonus",
-        multiplier: 1.0,
-        description: `${newDailyStreak}-day streak bonus!`,
-        levelBefore: userXP.level,
-        levelAfter: newLevel,
-        timestamp: Date.now(),
+        reason: `${newDailyStreak}-day streak bonus!`,
+        createdAt: Date.now(),
       });
     }
 
@@ -353,12 +348,13 @@ export const updateStreak = mutation({
  */
 export const checkAchievements = mutation({
   args: {
-    userId: v.id("users"),
+    userId: v.string(),
   },
   handler: async (ctx, args) => {
+    const userId = args.userId as Id<"users">;
     const userXP = await ctx.db
       .query("userXP")
-      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
       .first();
 
     if (!userXP) return { unlockedAchievements: [] };
@@ -366,7 +362,7 @@ export const checkAchievements = mutation({
     // Get already unlocked achievements
     const unlockedIds = await ctx.db
       .query("achievements")
-      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
       .collect()
       .then((achievements) => achievements.map((a) => a.achievementId));
 
@@ -406,23 +402,21 @@ export const checkAchievements = mutation({
       if (shouldUnlock) {
         // Unlock achievement
         await ctx.db.insert("achievements", {
-          userId: args.userId,
+          userId,
           achievementId: achievement.id,
           category: achievement.category,
-          tier: achievement.tier,
           title: achievement.title,
           description: achievement.description,
           icon: achievement.icon,
           xpReward: achievement.xpReward,
           unlockedAt: Date.now(),
-          isSecret: achievement.isSecret,
-          rarity: achievement.rarity,
+          claimed: false,
         });
 
         // Award XP directly
         const userXP = await ctx.db
           .query("userXP")
-          .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
+          .withIndex("by_user_id", (q) => q.eq("userId", userId))
           .first();
           
         if (userXP) {
@@ -436,15 +430,12 @@ export const checkAchievements = mutation({
           });
           
           await ctx.db.insert("xpTransactions", {
-            userId: args.userId,
+            userId,
             amount: achievement.xpReward,
-            source: "achievement_unlock",
-            multiplier: 1.0,
-            description: `Achievement unlocked: ${achievement.title}`,
+            source: "achievement",
+            reason: `Achievement unlocked: ${achievement.title}`,
+            createdAt: Date.now(),
             metadata: { achievementId: achievement.id },
-            levelBefore: userXP.level,
-            levelAfter: newLevel,
-            timestamp: Date.now(),
           });
         }
 
@@ -465,12 +456,13 @@ export const checkAchievements = mutation({
  */
 export const getUserXP = query({
   args: {
-    userId: v.id("users"),
+    userId: v.string(),
   },
   handler: async (ctx, args) => {
+    const userId = args.userId as Id<"users">;
     const userXP = await ctx.db
       .query("userXP")
-      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
       .first();
 
     if (!userXP) return null;
@@ -491,12 +483,13 @@ export const getUserXP = query({
  */
 export const getUserAchievements = query({
   args: {
-    userId: v.id("users"),
+    userId: v.string(),
   },
   handler: async (ctx, args) => {
+    const userId = args.userId as Id<"users">;
     return await ctx.db
       .query("achievements")
-      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
       .collect();
   },
 });
@@ -506,14 +499,15 @@ export const getUserAchievements = query({
  */
 export const getXPTransactions = query({
   args: {
-    userId: v.id("users"),
+    userId: v.string(),
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    const userId = args.userId as Id<"users">;
     const limit = args.limit || 20;
     return await ctx.db
       .query("xpTransactions")
-      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
       .order("desc")
       .take(limit);
   },
@@ -532,7 +526,6 @@ export const getLeaderboard = query({
     ),
     metric: v.union(
       v.literal("total_xp"),
-      v.literal("level"),
       v.literal("streak"),
       v.literal("achievements")
     ),
@@ -555,13 +548,14 @@ export const getLeaderboard = query({
  */
 export const getDailyChallenges = query({
   args: {
-    userId: v.id("users"),
+    userId: v.string(),
   },
   handler: async (ctx, args) => {
+    const userId = args.userId as Id<"users">;
     const now = Date.now();
     return await ctx.db
       .query("dailyChallenges")
-      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
       .filter((q) => q.gt(q.field("expiresAt"), now))
       .collect();
   },
@@ -572,13 +566,14 @@ export const getDailyChallenges = query({
  */
 export const getActiveBoosts = query({
   args: {
-    userId: v.id("users"),
+    userId: v.string(),
   },
   handler: async (ctx, args) => {
+    const userId = args.userId as Id<"users">;
     const now = Date.now();
     return await ctx.db
       .query("xpBoosts")
-      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
       .filter((q) =>
         q.and(
           q.eq(q.field("isActive"), true),

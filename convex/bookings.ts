@@ -42,6 +42,7 @@ export const createBooking = mutation({
       currency: "INR",
       status: "pending",
       createdAt: Date.now(),
+      updatedAt: Date.now(),
     });
 
     return {

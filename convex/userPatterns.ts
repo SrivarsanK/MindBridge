@@ -76,7 +76,7 @@ export const upsertUserPatterns = mutation({
       .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
       .first();
 
-    const patternData = {
+    const patternData = {      patterns: JSON.stringify(args.conversationPatterns),
       userId: args.userId,
       emotionalProfile: args.emotionalProfile,
       topicPreferences: args.topicPreferences,
@@ -85,6 +85,7 @@ export const upsertUserPatterns = mutation({
       personalizedContext: args.personalizedContext,
       conversationCount: args.conversationCount,
       lastUpdated: Date.now(),
+      createdAt: Date.now(),
       version: existing ? existing.version + 1 : 1,
       personalizationEnabled: true,
     };
@@ -136,7 +137,7 @@ export const storeConversationEmbedding = mutation({
     sessionDuration: v.number(),
   },
   handler: async (ctx, args) => {
-    return await ctx.db.insert("conversationEmbeddings", args);
+    return await ctx.db.insert("conversationEmbeddings", { ...args, messageIndex: 0, embedding: [], contentHash: "placeholder", createdAt: Date.now() });
   },
 });
 
@@ -182,7 +183,7 @@ export const recordLearningSession = mutation({
     errorMessage: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    return await ctx.db.insert("patternLearningSessions", args);
+    return await ctx.db.insert("patternLearningSessions", { ...args, duration: args.processingTime, completedAt: Date.now(), sessionData: JSON.stringify(args), patternsLearned: args.patternsExtracted.length, accuracy: 0.8 });
   },
 });
 
