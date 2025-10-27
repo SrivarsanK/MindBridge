@@ -26,8 +26,6 @@ import type * as peerMatching from "../peerMatching.js";
 import type * as privacy from "../privacy.js";
 import type * as professionals from "../professionals.js";
 import type * as router from "../router.js";
-import type * as transactions from "../transactions.js";
-import type * as userPatterns from "../userPatterns.js";
 import type * as users from "../users.js";
 import type * as xp from "../xp.js";
 
@@ -53,8 +51,6 @@ declare const fullApi: ApiFromModules<{
   privacy: typeof privacy;
   professionals: typeof professionals;
   router: typeof router;
-  transactions: typeof transactions;
-  userPatterns: typeof userPatterns;
   users: typeof users;
   xp: typeof xp;
 }>;
