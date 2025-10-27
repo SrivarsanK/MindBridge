@@ -5,7 +5,6 @@ import PeerMatchingCard from "@/components/dashboard/peer-matching-card"
 import DailyCheckinCard from "@/components/dashboard/daily-checkin-card"
 import MicroInterventionsCard from "@/components/dashboard/micro-interventions-card"
 import InsightsCard from "@/components/dashboard/insights-card"
-import { PersonalizationSettingsCard } from "@/components/dashboard/personalization-settings-card"
 import { MoodIndicator } from "@/components/mood-indicator"
 import { XPBar } from "@/components/xp/XPBar"
 import { useLocale } from "@/components/locale-provider"
@@ -158,9 +157,6 @@ export default function DashboardPage() {
             </div>
             <div className="animate-in fade-in slide-in-from-right-4 duration-700 delay-300 min-w-0">
               <PeerMatchingCard />
-            </div>
-            <div className="animate-in fade-in slide-in-from-right-4 duration-700 delay-400 min-w-0">
-              <PersonalizationSettingsCard />
             </div>
           </div>
         </div>
