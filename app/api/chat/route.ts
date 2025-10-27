@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
 import { NextResponse } from "next/server";
+import { analyzeConversationPatterns, canPersonalize } from "@/lib/ml/lstm-analyzer";
 
 const CRISIS_KEYWORDS = [
   "suicide", "suicidal", "kill myself", "end my life", "want to die", "death", "dying",
@@ -47,58 +48,27 @@ export async function POST(req: Request) {
       );
     }
 
-    // Fetch user personalization context if available
-    let personalizedContext = "";
-    if (userId) {
-      try {
-        // Dynamically import to avoid loading on every request
-        const { ConvexHttpClient } = await import('convex/browser');
-        const { api } = await import('@/convex/_generated/api');
-        const { getToken } = await auth();
-        
-        const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL!;
-        if (convexUrl) {
-          const convex = new ConvexHttpClient(convexUrl);
-          
-          // Set auth token for Convex client
-          const token = await getToken({ template: "convex" });
-          if (token) {
-            convex.setAuth(token);
-          }
-
-          try {
-            const userPattern = await convex.query(api.userPatterns.getUserPatterns, {});
-            
-            if (userPattern && userPattern.personalizationEnabled) {
-              // Create personalized context from available pattern data
-              const contextParts = [];
-              if (userPattern.emotionalProfile?.dominantEmotions?.length > 0) {
-                contextParts.push(`Emotional profile: ${userPattern.emotionalProfile.dominantEmotions.join(', ')}`);
-              }
-              if (userPattern.communicationStyle?.tone) {
-                contextParts.push(`Communication style: ${userPattern.communicationStyle.tone} tone`);
-              }
-              if (userPattern.topicPreferences?.interests?.length > 0) {
-                contextParts.push(`Interests: ${userPattern.topicPreferences.interests.slice(0, 3).join(', ')}`);
-              }
-              personalizedContext = contextParts.length > 0 ? `\n\nUser Context: ${contextParts.join('. ')}` : '';
-              console.log("Using personalized context for user");
-            }
-          } catch (patternError) {
-            // Personalization not available yet, continue without it
-            console.log("Personalization not available:", patternError);
-          }
-        }
-      } catch (convexError) {
-        console.log("Could not fetch user patterns:", convexError);
-      }
-    }
-
     const lastUserMessage = messages
       .filter((m: any) => m.role === "user")
       .slice(-1)[0]?.content || "";
 
     const isCrisis = detectCrisis(lastUserMessage);
+
+    // Generate personalized context from local conversation history
+    let personalizedContext = "";
+    try {
+      if (canPersonalize()) {
+        const patterns = analyzeConversationPatterns();
+        personalizedContext = `\n\nUser Context: ${patterns.personalizedContext}`;
+        console.log("✅ Personalized context generated from local data");
+      } else {
+        personalizedContext = "\n\nUser Context: New user with limited conversation history. Provide warm, welcoming support and encourage sharing.";
+        console.log("📝 Using default context (insufficient conversation data)");
+      }
+    } catch (error) {
+      console.error("Failed to generate personalized context:", error);
+      personalizedContext = "\n\nUser Context: Provide supportive, empathetic responses.";
+    }
 
     const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
     console.log("Gemini API Key exists:", !!apiKey);

@@ -490,11 +490,11 @@ export default function PeerSearchPage() {
             )}
 
             {/* User Bio Section */}
-            <Card className="min-w-0 border-primary/20 bg-primary/5 self-start">
-              <CardHeader className="pb-5">
-                <CardTitle className="flex items-center gap-3 text-xl">
-                  <UserCircle2 className="h-6 w-6 text-primary shrink-0" />
-                  <span className="truncate">{t("your_profile") || "Your Profile"}</span>
+            <Card className="min-w-0 border-accent/20 bg-accent/5">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <UserCircle2 className="h-5 w-5 text-primary" />
+                  {t("your_profile") || "Your Profile"}
                 </CardTitle>
                 <CardDescription className="text-base mt-1.5">
                   {t("profile_description") || "Share a bit about yourself to help others connect with you"}
