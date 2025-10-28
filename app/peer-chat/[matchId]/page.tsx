@@ -76,7 +76,7 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
   const messages = useQuery(api.peerMatching.getPeerMessages, { matchId, limit: 100 })
   const peerPreKeyBundle = useQuery(
     api.peerMatching.getPreKeyBundle,
-    matchDetails?.peerId ? { userId: matchDetails.peerId } : "skip"
+    matchDetails?.peerId ? { userId: matchDetails.peerId as Id<"users"> } : { userId: undefined }
   )
 
   const sendMessage = useMutation(api.peerMatching.sendPeerMessage)
@@ -169,7 +169,7 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
     }
 
     initializeKeys()
-  }, [matchId, peerPreKeyBundle, uploadPreKeys, retryCount])
+  }, [matchId, peerPreKeyBundle]) // Remove uploadPreKeys from deps as it's stable
 
   // Decrypt messages when encryption key is ready
   useEffect(() => {
@@ -281,7 +281,7 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
         }
       })
     }
-  }, [encryptionKey]) // Only run when encryption key becomes available
+  }, [encryptionKey, optimisticMessages, matchId, sendMessage]) // Include all dependencies used in the effect
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -651,8 +651,9 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
             <span>Setting up encryption - messages will send automatically when ready</span>
           </div>
         )}
-      {/* Message Input - Glassmorphism Style */}
-      <div className="backdrop-blur-xl bg-[color-mix(in_srgb,var(--background)_70%,transparent)] border-t border-[color-mix(in_srgb,var(--border)_50%,transparent)] px-4 py-3 shadow-[0_-4px_16px_0_color-mix(in_srgb,var(--foreground)_5%,transparent)]">
+
+        {/* Message Input - Glassmorphism Style */}
+        <div className="backdrop-blur-xl bg-[color-mix(in_srgb,var(--background)_70%,transparent)] border-t border-[color-mix(in_srgb,var(--border)_50%,transparent)] px-4 py-3 shadow-[0_-4px_16px_0_color-mix(in_srgb,var(--foreground)_5%,transparent)]">
         {optimisticMessages.length > 0 && (
           <div className="mb-2 flex items-center gap-2 text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg p-2 backdrop-blur-sm">
             <Loader2 className="h-3 w-3 animate-spin flex-shrink-0" />
