@@ -186,9 +186,9 @@ export function moderateContent(text: string): ModerationResult {
   // Determine overall severity
   const maxSeverity = violations.length > 0
     ? violations.reduce((max, v) => {
-        const severities = { low: 1, medium: 2, high: 3, critical: 4 }
-        return severities[v.severity] > severities[max] ? v.severity : max
-      }, 'low' as ModerationResult['severity'])
+        const severities = { none: 0, low: 1, medium: 2, high: 3, critical: 4 }
+        return severities[v.severity] > severities[max as keyof typeof severities] ? v.severity : max
+      }, 'none' as ModerationResult['severity'])
     : 'none'
   
   // Determine if content is allowed
