@@ -46,7 +46,7 @@ export const requestPeerMatch = mutation({
 // Internal action: Process peer match
 export const processPeerMatch = internalAction({
   args: {
-    userId: v.id("users"),
+    userId: v.string(),
     mood: v.string(),
     lonelinessLevel: v.number(),
     interests: v.array(v.string()),
@@ -138,7 +138,7 @@ export const processPeerMatch = internalAction({
 // Internal query: Load potential matches
 export const loadPotentialMatches = internalQuery({
   args: {
-    userId: v.id("users"),
+    userId: v.string(),
     timezone: v.string(),
   },
   handler: async (ctx, args) => {
@@ -197,8 +197,8 @@ export const loadPotentialMatches = internalQuery({
 // Internal: Create match
 export const createMatch = internalMutation({
   args: {
-    user1Id: v.id("users"),
-    user2Id: v.id("users"),
+    user1Id: v.string(),
+    user2Id: v.string(),
     matchScore: v.number(),
     mood: v.string(),
     lonelinessLevel: v.number(),
@@ -850,7 +850,7 @@ export const uploadPreKeys = mutation({
  */
 export const getPreKeyBundle = query({
   args: {
-    userId: v.optional(v.id("users")),
+    userId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     if (!args.userId) {
@@ -887,7 +887,7 @@ export const getPreKeyBundle = query({
  */
 export const consumePreKey = mutation({
   args: {
-    userId: v.id("users"),
+    userId: v.string(),
     preKey: v.string(),
   },
   handler: async (ctx, args) => {
@@ -1043,7 +1043,7 @@ export const getAvailablePeers = query({
 // Create a direct peer match (for browsing-based matching)
 export const createDirectPeerMatch = mutation({
   args: {
-    targetUserId: v.id("users"),
+    targetUserId: v.string(),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);

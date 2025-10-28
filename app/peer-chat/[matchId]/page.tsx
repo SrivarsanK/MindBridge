@@ -76,7 +76,7 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
   const messages = useQuery(api.peerMatching.getPeerMessages, { matchId, limit: 100 })
   const peerPreKeyBundle = useQuery(
     api.peerMatching.getPreKeyBundle,
-    matchDetails?.peerId ? { userId: matchDetails.peerId as Id<"users"> } : "skip"
+    matchDetails?.peerId ? { userId: matchDetails.peerId } : "skip"
   )
 
   const sendMessage = useMutation(api.peerMatching.sendPeerMessage)
