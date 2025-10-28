@@ -63,6 +63,7 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
   const [isInitializing, setIsInitializing] = useState(true)
   const [showEndConfirm, setShowEndConfirm] = useState(false)
   const [optimisticMessages, setOptimisticMessages] = useState<DecryptedMessage[]>([])
+  const [queuedMessages, setQueuedMessages] = useState<DecryptedMessage[]>([])
   const [peerOnline, setPeerOnline] = useState(false)
   const [initializationError, setInitializationError] = useState<string | null>(null)
   const [retryCount, setRetryCount] = useState(0)
@@ -259,11 +260,11 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
 
   // Auto-send queued messages when encryption becomes ready (ONE TIME ONLY)
   useEffect(() => {
-    if (encryptionKey && optimisticMessages.length > 0) {
-      console.log(`📤 Encryption ready! Sending ${optimisticMessages.length} queued messages...`)
+    if (encryptionKey && queuedMessages.length > 0) {
+      console.log(`📤 Encryption ready! Sending ${queuedMessages.length} queued messages...`)
       
-      // Send all queued optimistic messages
-      const messagesToSend = [...optimisticMessages]; // Copy to avoid stale closure
+      // Send all queued messages
+      const messagesToSend = [...queuedMessages]; // Copy to avoid stale closure
       
       messagesToSend.forEach(async (msg) => {
         try {
@@ -274,19 +275,19 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
             iv,
           })
           console.log(`✅ Queued message sent: "${msg.plaintext.substring(0, 20)}..."`)
-          // Remove from optimistic messages after sending
-          setOptimisticMessages(prev => prev.filter(m => m._id !== msg._id))
+          // Remove from queued messages after sending
+          setQueuedMessages(prev => prev.filter(m => m._id !== msg._id))
         } catch (error) {
           console.error("Failed to send queued message:", error)
         }
       })
     }
-  }, [encryptionKey, optimisticMessages, matchId, sendMessage]) // Include all dependencies used in the effect
+  }, [encryptionKey, queuedMessages, matchId, sendMessage]) // Include all dependencies used in the effect
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [decryptedMessages, optimisticMessages])
+  }, [decryptedMessages, optimisticMessages, queuedMessages])
 
   const handleSendMessage = async () => {
     if (!messageInput.trim() || isEncrypting) return
@@ -346,8 +347,8 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
     // If encryption is not ready yet, queue the message
     if (!encryptionKey) {
       console.log("⏳ Message queued - waiting for encryption key")
-      setOptimisticMessages(prev => [...prev, optimisticMsg])
-      // The message will stay in optimisticMessages until encryption is ready
+      setQueuedMessages(prev => [...prev, optimisticMsg])
+      // The message will stay in queuedMessages until encryption is ready
       return
     }
 
@@ -500,8 +501,8 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
                 <span className="text-[var(--muted-foreground)]">•</span>
                 {isEncryptionReady ? (
                   <span className="text-[#00a884] text-xs">✓ Connected</span>
-                ) : optimisticMessages.length > 0 ? (
-                  <span className="text-[#ffa500] text-xs">⏳ {optimisticMessages.length} queued</span>
+                ) : (optimisticMessages.length > 0 || queuedMessages.length > 0) ? (
+                  <span className="text-[#ffa500] text-xs">⏳ {optimisticMessages.length + queuedMessages.length} queued</span>
                 ) : (
                   <span className="text-[#8696a0] text-xs">Setting up...</span>
                 )}
@@ -523,8 +524,8 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
       {/* Messages - Glassmorphism Style */}
       <div className="flex-1 overflow-y-auto backdrop-blur-sm bg-[color-mix(in_srgb,var(--background)_30%,transparent)] px-6 py-4">
         {(() => {
-          // Combine optimistic and decrypted messages, sort by timestamp
-          const allMessages = [...decryptedMessages, ...optimisticMessages]
+          // Combine decrypted, optimistic, and queued messages, sort by timestamp
+          const allMessages = [...decryptedMessages, ...optimisticMessages, ...queuedMessages]
             .sort((a, b) => a.timestamp - b.timestamp)
 
           return allMessages.length === 0 ? (
