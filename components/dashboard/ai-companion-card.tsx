@@ -61,10 +61,22 @@ export function AICompanionCard() {
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (messagesContainerRef.current) {
+      const container = messagesContainerRef.current;
+      container.scrollTop = container.scrollHeight;
     }
   }, [messages, isTyping]);
+
+  // Auto-scroll when user sends a message
+  useEffect(() => {
+    if (messagesContainerRef.current && input === "") {
+      const container = messagesContainerRef.current;
+      // Small delay to ensure DOM has updated
+      setTimeout(() => {
+        container.scrollTop = container.scrollHeight;
+      }, 100);
+    }
+  }, [input]);
 
   // Save messages to localStorage whenever they change
   useEffect(() => {
@@ -269,9 +281,9 @@ export function AICompanionCard() {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col gap-4">
+      <CardContent className="flex-1 flex flex-col">
         {showCrisisAlert && (
-          <div className="bg-gradient-to-br from-red-50 to-red-50/50 border-2 border-red-200 rounded-xl p-4 flex items-start gap-3 shadow-md">
+          <div className="bg-gradient-to-br from-red-50 to-red-50/50 border-2 border-red-200 rounded-xl p-4 flex items-start gap-3 shadow-md mb-4">
             <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-gradient-to-br from-red-500 to-red-600 shadow-md shrink-0">
               <AlertTriangle className="h-4 w-4 text-white" />
             </div>
@@ -298,7 +310,7 @@ export function AICompanionCard() {
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto space-y-4 pr-2 min-h-0 max-h-[60vh]" ref={messagesContainerRef}>
+        <div className="flex-1 overflow-y-auto space-y-4 pr-2 min-h-0 max-h-[400px] scroll-smooth" ref={messagesContainerRef}>
           {messages.map((message, index) => (
             <div
               key={index}
@@ -347,7 +359,7 @@ export function AICompanionCard() {
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 mt-4">
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
