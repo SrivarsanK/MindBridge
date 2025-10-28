@@ -483,6 +483,11 @@ export default function PeerChatPage({ params }: { params: Promise<{ matchId: st
               <h1 className="text-[var(--foreground)] text-lg font-medium truncate">
                 {matchDetails.peerDisplayName}
               </h1>
+              {matchDetails.chatName && (
+                <p className="text-sm text-[var(--muted-foreground)] truncate">
+                  {matchDetails.chatName}
+                </p>
+              )}
               <div className="flex items-center gap-2 text-sm">
                 <div className="flex items-center gap-1.5">
                   <Lock className="h-3 w-3 text-[#00a884]" />

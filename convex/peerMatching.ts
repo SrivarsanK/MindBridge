@@ -4,6 +4,56 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 
+// Simple chat name generation based on keywords
+function generateSimpleChatName(iceBreaker: string, description?: string, mood?: string): string {
+  const text = `${iceBreaker} ${description || ''} ${mood || ''}`.toLowerCase();
+
+  // Define keyword mappings for common recovery topics
+  const keywordMap: Record<string, string> = {
+    'craving': 'Craving Support',
+    'relapse': 'Relapse Prevention',
+    'anxiety': 'Anxiety Support',
+    'stress': 'Stress Management',
+    'depression': 'Mood Support',
+    'lonely': 'Loneliness Support',
+    'motivation': 'Motivation Building',
+    'sobriety': 'Sobriety Journey',
+    'recovery': 'Recovery Support',
+    'addiction': 'Addiction Support',
+    'trigger': 'Trigger Management',
+    'emotional': 'Emotional Support',
+    'coping': 'Coping Strategies',
+    'support': 'Peer Support',
+    'help': 'Recovery Help',
+  };
+
+  // Check for keywords in the text
+  for (const [keyword, chatName] of Object.entries(keywordMap)) {
+    if (text.includes(keyword)) {
+      return chatName;
+    }
+  }
+
+  // Fallback based on mood
+  if (mood) {
+    const moodMap: Record<string, string> = {
+      'anxious': 'Anxiety Support',
+      'stressed': 'Stress Relief',
+      'lonely': 'Connection Support',
+      'sad': 'Mood Support',
+      'hopeful': 'Hope Building',
+      'confused': 'Guidance Support',
+    };
+
+    if (moodMap[mood]) {
+      return moodMap[mood];
+    }
+  }
+
+  // Default fallback
+  return 'Recovery Support Chat';
+}
+
 // Request peer match
 export const requestPeerMatch = mutation({
   args: {
@@ -127,6 +177,7 @@ export const processPeerMatch = internalAction({
       lonelinessLevel: args.lonelinessLevel,
       interests: args.interests,
       iceBreaker,
+      description: undefined, // No description available in this context
     });
 
     console.log(`🎉 Match created: ${matchId}`);
@@ -204,8 +255,12 @@ export const createMatch = internalMutation({
     lonelinessLevel: v.number(),
     interests: v.array(v.string()),
     iceBreaker: v.string(),
+    description: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    // Generate initial chat name using a simple approach
+    const chatName = generateSimpleChatName(args.iceBreaker, args.description, args.mood);
+
     const matchId = await ctx.db.insert("peerMatches", {
       user1Id: args.user1Id,
       user2Id: args.user2Id,
@@ -218,6 +273,8 @@ export const createMatch = internalMutation({
       },
       status: "active",
       iceBreaker: args.iceBreaker,
+      chatName,
+      description: args.description,
       createdAt: Date.now(),
       lastActivityAt: Date.now(),
       messageCount: 0,
@@ -941,6 +998,7 @@ export const getMatchDetails = query({
         messageCount: match.messageCount,
         peerDisplayName: "Unknown Peer",
         matchScore: match.matchScore,
+        chatName: match.chatName || "Recovery Support Chat",
       };
     }
 
@@ -959,6 +1017,7 @@ export const getMatchDetails = query({
       messageCount: match.messageCount,
       peerDisplayName: peerProfile?.displayName || "Anonymous Peer",
       matchScore: match.matchScore,
+      chatName: match.chatName || "Recovery Support Chat",
     };
   },
 });
@@ -1169,6 +1228,9 @@ export const createOpenMatch = mutation({
     // Generate ice breaker based on mood
     const iceBreaker = await generateIceBreaker(args.mood, args.interests);
 
+    // Generate initial chat name
+    const chatName = generateSimpleChatName(iceBreaker, args.description, args.mood);
+
     // Create pending match (no user2Id yet)
     const matchId = await ctx.db.insert("peerMatches", {
       user1Id: userId,
@@ -1183,6 +1245,7 @@ export const createOpenMatch = mutation({
       status: "pending",
       description: args.description,
       iceBreaker,
+      chatName,
       createdAt: Date.now(),
       lastActivityAt: Date.now(),
       messageCount: 0,

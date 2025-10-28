@@ -139,6 +139,7 @@ export default defineSchema({
     ),
     description: v.optional(v.string()), // Description of what user is looking for help with
     iceBreaker: v.string(),
+    chatName: v.optional(v.string()), // AI-generated unique name for the chat
     createdAt: v.number(),
     lastActivityAt: v.number(),
     messageCount: v.number(),

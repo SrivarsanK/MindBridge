@@ -249,7 +249,7 @@ export default function PeerMatchingCard() {
                     </div>
                     <div className="flex flex-col gap-0.5 min-w-0 flex-1">
                       <div className="text-sm font-medium truncate">
-                        {match.peerDisplayName}
+                        {match.chatName || match.peerDisplayName}
                         {match.isPending && <span className="ml-2 text-xs text-orange-500">(Waiting)</span>}
                       </div>
                       <div className="text-xs text-muted-foreground truncate">
